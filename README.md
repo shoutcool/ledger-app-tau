@@ -1,5 +1,13 @@
 # ledger-app-sia
 
+python -m ledgerblue.genCAPair
+Public key : 042479eb81ea052b1b23b2dba4d54bc087b250f616951ba2da731bdb826235bc27883dff0931a1af6e711c8a575cef9c10e38fc0e0f9fc8aaecc7042fc5861f707
+Private key: ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
+
+export SCP_PRIVKEY=ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
+
+
+
 This is the official Sia wallet app for the Ledger Nano S.
 
 When installed on a Nano S, the app allows you to generate Sia addresses,

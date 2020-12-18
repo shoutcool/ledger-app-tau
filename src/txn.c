@@ -61,6 +61,7 @@ static int cur2dec(uint8_t *out, uint8_t *cur) {
 	// first byte; it should never be greater than 18 (18 bytes = 144 bits,
 	// i.e. a value of 2^144 H, or 22 quadrillion SC).
 	if (cur[0] > 18) {
+		PRINTF("1");
 		THROW(TXN_STATE_ERR);
 	}
 
@@ -87,6 +88,7 @@ static int cur2dec(uint8_t *out, uint8_t *cur) {
 	buf[--i] = '\0';
 	while (len > 0) {
 		if (i <= 0) {
+			PRINTF("2");
 			THROW(TXN_STATE_ERR);
 		}
 		buf[--i] = '0' + quorem10(nat, len);
@@ -172,12 +174,14 @@ static void readCoveredFields(txn_state_t *txn) {
 	need_at_least(txn, 1);
 	// for now, we require WholeTransaction = true
 	if (txn->buf[txn->pos] != 1) {
+		PRINTF("3");
 		THROW(TXN_STATE_ERR);
 	}
 	seek(txn, 1);
 	// all other fields must be empty
 	for (int i = 0; i < 10; i++) {
 		if (readInt(txn) != 0) {
+			PRINTF("4");
 			THROW(TXN_STATE_ERR);
 		}
 	}
@@ -206,6 +210,7 @@ static void __txn_next_elem(txn_state_t *txn) {
 		// if we've reached the TransactionSignatures, check that sigIndex is
 		// a valid index
 		if ((txn->elemType == TXN_ELEM_TXN_SIG) && (txn->sigIndex >= txn->sliceLen)) {
+			PRINTF("5");
 			THROW(TXN_STATE_ERR);
 		}
 	}
@@ -272,6 +277,7 @@ static void __txn_next_elem(txn_state_t *txn) {
 	case TXN_ELEM_SP:
 	case TXN_ELEM_ARB_DATA:
 		if (txn->sliceLen != 0) {
+			PRINTF("6");
 			THROW(TXN_STATE_ERR);
 		}
 		return;
@@ -305,6 +311,9 @@ txnDecoderState_e txn_next_elem(txn_state_t *txn) {
 		// we filled the buffer to max capacity, but there still wasn't enough
 		// to decode a full element. This generally means that the txn is
 		// corrupt in some way, since elements shouldn't be very large.
+		//PRINTF('\nBuflen %s max: %s', txn->buflen, sizeof(txn->buf));
+		//PRINTF("\n77 %hu  max %lu", txn->buflen,  sizeof(txn->buf));
+		PRINTF("7");
 		return TXN_STATE_ERR;
 	}
 	return result;
@@ -316,6 +325,7 @@ void txn_init(txn_state_t *txn, uint16_t sigIndex, bool asicChain) {
 	txn->elemType = -1; // first increment brings it to SC_INPUT
 	txn->sigIndex = sigIndex;
 	txn->asicChain = asicChain;
+	//PRINTF('\nBuflen: %s\n', txn->buflen);
 
 	// initialize hash state
 	blake2b_init(&txn->blake);
@@ -331,6 +341,9 @@ void txn_update(txn_state_t *txn, uint8_t *in, uint8_t inlen) {
 	// append to the buffer
 	os_memmove(txn->buf + txn->buflen, in, inlen);
 	txn->buflen += inlen;
+
+	//PRINTF('\nBuflen New: %s\n', txn->buflen);
+
 
 	// reset the seek position; if we previously threw TXN_STATE_PARTIAL, now
 	// we can try decoding again from the beginning.

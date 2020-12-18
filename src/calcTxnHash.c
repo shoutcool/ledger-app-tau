@@ -315,16 +315,20 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 	// there doesn't seem to be a clean way to avoid this duplication.
 	switch (txn_next_elem(&ctx->txn)) {
 	case TXN_STATE_ERR:
+		PRINTF("10");
 		THROW(SW_INVALID_PARAM);
 	case TXN_STATE_PARTIAL:
+		PRINTF("11");
 		THROW(SW_OK);
 	case TXN_STATE_READY:
+		PRINTF("12");
 		ctx->elemPart = 0;
 		fmtTxnElem(ctx);
 		UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
 		*flags |= IO_ASYNCH_REPLY;
 		break;
 	case TXN_STATE_FINISHED:
+		PRINTF("13");
 		if (ctx->sign) {
 			os_memmove(ctx->fullStr, "with Key #", 10);
 			bin2dec(ctx->fullStr+10, ctx->keyIndex);

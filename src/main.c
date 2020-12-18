@@ -240,6 +240,8 @@ static void sia_main(void) {
 	volatile unsigned int tx = 0;
 	volatile unsigned int flags = 0;
 
+	PRINTF("What a lovely buffer");
+
 	// Exchange APDUs until EXCEPTION_IO_RESET is thrown.
 	for (;;) {
 		volatile unsigned short sw = 0;
