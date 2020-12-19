@@ -20,35 +20,23 @@ typedef enum {
     TXN_STATE_FINISHED, // reached end of transaction
 } txnDecoderState_e;
 
-// txnElemType_e indicates a transaction element type.
-typedef enum {
-	TXN_ELEM_SC_INPUT,
-	TXN_ELEM_SC_OUTPUT,
-	TXN_ELEM_FC,
-	TXN_ELEM_FCR,
-	TXN_ELEM_SP,
-	TXN_ELEM_SF_INPUT,
-	TXN_ELEM_SF_OUTPUT,
-	TXN_ELEM_MINER_FEE,
-	TXN_ELEM_ARB_DATA,
-	TXN_ELEM_TXN_SIG,
-} txnElemType_e;
-
 // txn_state_t is a helper object for computing the SigHash of a streamed
 // transaction.
 typedef struct {
-	uint8_t buf[1020]; // holds raw tx bytes; large enough for two 0xFF reads
+	uint8_t buf[1024]; // holds raw tx bytes; large enough for two 0xFF reads
 	uint16_t buflen;  // number of valid bytes in buf
 	uint16_t pos;     // mid-decode offset; reset to 0 after each elem
 
-	txnElemType_e elemType; // type of most-recently-seen element
 	uint64_t sliceLen;      // most-recently-seen slice length prefix
 	uint16_t sliceIndex;    // offset within current element slice
 
 	uint16_t sigIndex;   // index of TxnSig being computed
-	bool asicChain;      // apply ASIC hardfork replay protection
 	cx_blake2b_t blake;  // hash state
-	uint8_t sigHash[32]; // buffer to hold final hash
+
+//a90b4755908d8ae16cb1efb6b74c92511aa8ce52265ab1ff56620644bbf2094e
+//1e07f983734ad05973708d43ea3dd881b0caabcc5d61a5825ba7b93660272f7b SHA256
+
+	uint8_t sigHash[64]; // buffer to hold final hash
 
 	uint8_t outVal[128]; // most-recently-seen currency value, in decimal
 	uint8_t valLen;      // length of outVal
@@ -57,7 +45,7 @@ typedef struct {
 
 // txn_init initializes a transaction decoder, preparing it to calculate the
 // requested SigHash.
-void txn_init(txn_state_t *txn, uint16_t sigIndex, bool asicChain);
+void txn_init(txn_state_t *txn, uint16_t sigIndex);
 
 // txn_update adds data to a transaction decoder.
 void txn_update(txn_state_t *txn, uint8_t *in, uint8_t inlen);

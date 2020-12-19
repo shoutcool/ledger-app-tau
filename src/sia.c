@@ -34,10 +34,16 @@ void extractPubkeyBytes(unsigned char *dst, cx_ecfp_public_key_t *publicKey) {
 	}
 }
 
-void deriveAndSign(uint8_t *dst, uint32_t index, const uint8_t *hash) {
+void deriveAndSign(uint8_t *dst, uint32_t index, const uint8_t *msg) {
 	cx_ecfp_private_key_t privateKey;
 	deriveSiaKeypair(index, &privateKey, NULL);
-	cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, hash, 32, NULL, 0, dst, 64, NULL);
+
+	//uint8_t a = 0xFF;
+	//uint8_t* ptr = &a;
+	//PRINTF("%d", *ptr);
+	//PRINTF("%d", *msg);
+	//cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, hash, 32, NULL, 0, dst, 64, NULL);
+	cx_eddsa_sign(&privateKey, 0, CX_SHA512, msg, sizeof(msg), NULL, 0, dst, 64, NULL);
 	os_memset(&privateKey, 0, sizeof(privateKey));
 }
 

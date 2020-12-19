@@ -88,7 +88,15 @@ static unsigned int ui_calcTxnHash_sign_button(unsigned int button_mask, unsigne
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_RIGHT: // APPROVE
-		deriveAndSign(G_io_apdu_buffer, ctx->keyIndex, ctx->txn.sigHash);
+		/* for(int x=0; x<1020; x++)
+		{
+			PRINTF("%d", ctx->txn.buf[x]);
+		} */
+
+		PRINTF("What a lovely buffer:\n %.*H \n\n", 512, ctx->txn.buf);
+		//0000000000007B22636F6E7472616374223A2263757272656E6379222C2266756E6374696F6E223A227472616E73666572222C226B7761726773223A7B22616D6F756E74223A31302C22746F223A2237323863343134396136316166323031613031356238383364353732643465623263326537616533366135326332383536626565323630363130363765393863227D2C226E6F6E6365223A302C2270726F636573736F72223A2238396636376262383731333531613136323964363636373665346264393262626163623233626430363439623839303534326566393866316236363461343937222C2273656E646572223A2262383837306439313339
+		
+		deriveAndSign(G_io_apdu_buffer, ctx->keyIndex, ctx->txn.buf);
 		io_exchange_with_code(SW_OK, 64);
 		ui_idle();
 		break;
@@ -116,7 +124,7 @@ static const bagl_element_t* ui_prepro_calcTxnHash_elem(const bagl_element_t *el
 // display. It stores the type of the element in labelStr, and a human-
 // readable representation of the element in fullStr. As in previous screens,
 // partialStr holds the visible portion of fullStr.
-static void fmtTxnElem(calcTxnHashContext_t *ctx) {
+/* static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 	txn_state_t *txn = &ctx->txn;
 
 	switch (txn->elemType) {
@@ -177,7 +185,7 @@ static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 	// Regardless of what we're displaying, the displayIndex should always be
 	// reset to 0, because we're displaying the beginning of fullStr.
 	ctx->displayIndex = 0;
-}
+} */
 
 static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigned int button_mask_counter) {
 	switch (button_mask) {
@@ -281,17 +289,20 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 		}
 		ctx->initialized = true;
 
+		ctx->keyIndex = 0x00000000; // aktuell wird nur Key 0 unterstützt
+		uint16_t sigIndex = 0x0000; // SigIndex ist auch immer 0 (was auch immer das ist)
+
+
 		// If this is the first packet, it will include the key index and sig
 		// index in addition to the transaction data. Use these to initialize
 		// the ctx and the transaction decoder.
-		ctx->keyIndex = U4LE(dataBuffer, 0); // NOTE: ignored if !ctx->sign
-		dataBuffer += 4; dataLength -= 4;
-		uint16_t sigIndex = U2LE(dataBuffer, 0);
-		dataBuffer += 2; dataLength -= 2;
+		////ctx->keyIndex = U4LE(dataBuffer, 0); // NOTE: ignored if !ctx->sign
+		////dataBuffer += 4; dataLength -= 4;
+		////uint16_t sigIndex = U2LE(dataBuffer, 0);
+		//// dataBuffer += 2; dataLength -= 2;
 		// The official Sia Nano S app only signs transactions on the forked
 		// chain. To use the app on dissenting chains, pass false instead.
-		const bool useASICHardforkChain = true;
-		txn_init(&ctx->txn, sigIndex, useASICHardforkChain);
+		txn_init(&ctx->txn, sigIndex);
 
 		// Set ctx->sign according to P2.
 		ctx->sign = (p2 & P2_SIGN_HASH);
@@ -308,125 +319,108 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 	}
 
 	// Add the new data to transaction decoder.
+	PRINTF("%u\n", dataLength);
 	txn_update(&ctx->txn, dataBuffer, dataLength);
 
-	// Attempt to decode the next element of the transaction. Note that this
-	// code is essentially identical to ui_calcTxnHash_elem_button. Sadly,
-	// there doesn't seem to be a clean way to avoid this duplication.
-	switch (txn_next_elem(&ctx->txn)) {
-	case TXN_STATE_ERR:
-		PRINTF("10");
-		THROW(SW_INVALID_PARAM);
-	case TXN_STATE_PARTIAL:
-		PRINTF("11");
-		THROW(SW_OK);
-	case TXN_STATE_READY:
-		PRINTF("12");
-		ctx->elemPart = 0;
-		fmtTxnElem(ctx);
-		UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
+
+	
+	if (ctx->sign) {
+		os_memmove(ctx->fullStr, "with Key #", 10);
+		bin2dec(ctx->fullStr+10, ctx->keyIndex);
+		os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
+		UX_DISPLAY(ui_calcTxnHash_sign, NULL);
 		*flags |= IO_ASYNCH_REPLY;
-		break;
-	case TXN_STATE_FINISHED:
-		PRINTF("13");
-		if (ctx->sign) {
-			os_memmove(ctx->fullStr, "with Key #", 10);
-			bin2dec(ctx->fullStr+10, ctx->keyIndex);
-			os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
-			UX_DISPLAY(ui_calcTxnHash_sign, NULL);
-			*flags |= IO_ASYNCH_REPLY;
-		} else {
-			os_memmove(G_io_apdu_buffer, ctx->txn.sigHash, 32);
-			io_exchange_with_code(SW_OK, 32);
-			bin2hex(ctx->fullStr, ctx->txn.sigHash, sizeof(ctx->txn.sigHash));
-			os_memmove(ctx->partialStr, ctx->fullStr, 12);
-			ctx->elemLen = 64;
-			ctx->displayIndex = 0;
-			UX_DISPLAY(ui_calcTxnHash_compare, ui_prepro_calcTxnHash_compare);
-			// The above code does something strange: it calls io_exchange
-			// directly from the command handler. You might wonder: why not
-			// just prepare the APDU buffer and let sia_main call io_exchange?
-			// The answer, surprisingly, is that we also need to call
-			// UX_DISPLAY, and UX_DISPLAY affects io_exchange in subtle ways.
-			// To understand why, we'll need to dive deep into the Nano S
-			// firmware. I recommend that you don't skip this section, even
-			// though it's lengthy, because it will save you a lot of
-			// frustration when you go "off the beaten path" in your own app.
-			//
-			// Recall that the Nano S has two chips. Your app (and the Ledger
-			// OS, BOLOS) runs on the Secure Element. The SE is completely
-			// self-contained; it doesn't talk to the outside world at all. It
-			// only talks to the other chip, the MCU. The MCU is what
-			// processes button presses, renders things on screen, and
-			// exchanges APDU packets with the computer. The communication
-			// layer between the SE and the MCU is called SEPROXYHAL. There
-			// are some nice diagrams in the "Hardware Architecture" section
-			// of Ledger's docs that will help you visualize all this.
-			//
-			// The SEPROXYHAL protocol, like any communication protocol,
-			// specifies exactly when each party is allowed to talk.
-			// Communication happens in a loop: first the MCU sends an Event,
-			// then the SE replies with zero or more Commands, and finally the
-			// SE sends a Status to indicate that it has finished processing
-			// the Event, completing one iteration:
-			//
-			//    Event -> Commands -> Status -> Event -> Commands -> ...
-			//
-			// For our purposes, an "Event" is a request APDU, and a "Command"
-			// is a response APDU. (There are other types of Events and
-			// Commands, such as button presses, but they aren't relevant
-			// here.) As for the Status, there is a "General" Status and a
-			// "Display" Status. A General Status tells the MCU to send the
-			// response APDU, and a Display Status tells it to render an
-			// element on the screen. Remember, it's "zero or more Commands,"
-			// so it's legal to send just a Status without any Commands.
-			//
-			// You may have some picture of the problem now. Imagine we
-			// prepare the APDU buffer, then call UX_DISPLAY, and then let
-			// sia_main send the APDU with io_exchange. What happens at the
-			// SEPROXYHAL layer? First, UX_DISPLAY will send a Display Status.
-			// Then, io_exchange will send a Command and a General Status. But
-			// no Event was processed between the two Statuses! This causes
-			// SEPROXYHAL to freak out and crash, forcing you to reboot your
-			// Nano S.
-			//
-			// So why does calling io_exchange before UX_DISPLAY fix the
-			// problem? Won't we just end up sending two Statuses again? The
-			// secret is that io_exchange_with_code uses the
-			// IO_RETURN_AFTER_TX flag. Previously, the only thing we needed
-			// to know about IO_RETURN_AFTER_TX is that it sends a response
-			// APDU without waiting for the next request APDU. But it has one
-			// other important property: it tells io_exchange not to send a
-			// Status! So the only Status we send comes from UX_DISPLAY. This
-			// preserves the ordering required by SEPROXYHAL.
-			//
-			// Lastly: what if we prepare the APDU buffer in the handler, but
-			// with the IO_RETURN_AFTER_TX flag set? Will that work?
-			// Unfortunately not. io_exchange won't send a status, but it
-			// *will* send a Command containing the APDU, so we still end up
-			// breaking the correct SEPROXYHAL ordering.
-			//
-			// Here's a list of rules that will help you debug similar issues:
-			//
-			// - Always preserve the order: Event -> Commands -> Status
-			// - UX_DISPLAY sends a Status
-			// - io_exchange sends a Command and a Status
-			// - IO_RETURN_AFTER_TX makes io_exchange not send a Status
-			// - IO_ASYNCH_REPLY (or tx=0) makes io_exchange not send a Command
-			//
-			// Okay, that second rule isn't 100% accurate. UX_DISPLAY doesn't
-			// necessarily send a single Status: it sends a separate Status
-			// for each element you render! The reason this works is that the
-			// MCU replies to each Display Status with a Display Processed
-			// Event. That means you can call UX_DISPLAY many times in a row
-			// without disrupting SEPROXYHAL. Anyway, as far as we're
-			// concerned, it's simpler to think of UX_DISPLAY as sending just
-			// a single Status.
-		}
-		// Reset the initialization state.
-		ctx->initialized = false;
-		break;
+	} else {
+		os_memmove(G_io_apdu_buffer, ctx->txn.sigHash, 32);
+		io_exchange_with_code(SW_OK, 32);
+		bin2hex(ctx->fullStr, ctx->txn.sigHash, sizeof(ctx->txn.sigHash));
+		os_memmove(ctx->partialStr, ctx->fullStr, 12);
+		ctx->elemLen = 64;
+		ctx->displayIndex = 0;
+		UX_DISPLAY(ui_calcTxnHash_compare, ui_prepro_calcTxnHash_compare);
+		// The above code does something strange: it calls io_exchange
+		// directly from the command handler. You might wonder: why not
+		// just prepare the APDU buffer and let sia_main call io_exchange?
+		// The answer, surprisingly, is that we also need to call
+		// UX_DISPLAY, and UX_DISPLAY affects io_exchange in subtle ways.
+		// To understand why, we'll need to dive deep into the Nano S
+		// firmware. I recommend that you don't skip this section, even
+		// though it's lengthy, because it will save you a lot of
+		// frustration when you go "off the beaten path" in your own app.
+		//
+		// Recall that the Nano S has two chips. Your app (and the Ledger
+		// OS, BOLOS) runs on the Secure Element. The SE is completely
+		// self-contained; it doesn't talk to the outside world at all. It
+		// only talks to the other chip, the MCU. The MCU is what
+		// processes button presses, renders things on screen, and
+		// exchanges APDU packets with the computer. The communication
+		// layer between the SE and the MCU is called SEPROXYHAL. There
+		// are some nice diagrams in the "Hardware Architecture" section
+		// of Ledger's docs that will help you visualize all this.
+		//
+		// The SEPROXYHAL protocol, like any communication protocol,
+		// specifies exactly when each party is allowed to talk.
+		// Communication happens in a loop: first the MCU sends an Event,
+		// then the SE replies with zero or more Commands, and finally the
+		// SE sends a Status to indicate that it has finished processing
+		// the Event, completing one iteration:
+		//
+		//    Event -> Commands -> Status -> Event -> Commands -> ...
+		//
+		// For our purposes, an "Event" is a request APDU, and a "Command"
+		// is a response APDU. (There are other types of Events and
+		// Commands, such as button presses, but they aren't relevant
+		// here.) As for the Status, there is a "General" Status and a
+		// "Display" Status. A General Status tells the MCU to send the
+		// response APDU, and a Display Status tells it to render an
+		// element on the screen. Remember, it's "zero or more Commands,"
+		// so it's legal to send just a Status without any Commands.
+		//
+		// You may have some picture of the problem now. Imagine we
+		// prepare the APDU buffer, then call UX_DISPLAY, and then let
+		// sia_main send the APDU with io_exchange. What happens at the
+		// SEPROXYHAL layer? First, UX_DISPLAY will send a Display Status.
+		// Then, io_exchange will send a Command and a General Status. But
+		// no Event was processed between the two Statuses! This causes
+		// SEPROXYHAL to freak out and crash, forcing you to reboot your
+		// Nano S.
+		//
+		// So why does calling io_exchange before UX_DISPLAY fix the
+		// problem? Won't we just end up sending two Statuses again? The
+		// secret is that io_exchange_with_code uses the
+		// IO_RETURN_AFTER_TX flag. Previously, the only thing we needed
+		// to know about IO_RETURN_AFTER_TX is that it sends a response
+		// APDU without waiting for the next request APDU. But it has one
+		// other important property: it tells io_exchange not to send a
+		// Status! So the only Status we send comes from UX_DISPLAY. This
+		// preserves the ordering required by SEPROXYHAL.
+		//
+		// Lastly: what if we prepare the APDU buffer in the handler, but
+		// with the IO_RETURN_AFTER_TX flag set? Will that work?
+		// Unfortunately not. io_exchange won't send a status, but it
+		// *will* send a Command containing the APDU, so we still end up
+		// breaking the correct SEPROXYHAL ordering.
+		//
+		// Here's a list of rules that will help you debug similar issues:
+		//
+		// - Always preserve the order: Event -> Commands -> Status
+		// - UX_DISPLAY sends a Status
+		// - io_exchange sends a Command and a Status
+		// - IO_RETURN_AFTER_TX makes io_exchange not send a Status
+		// - IO_ASYNCH_REPLY (or tx=0) makes io_exchange not send a Command
+		//
+		// Okay, that second rule isn't 100% accurate. UX_DISPLAY doesn't
+		// necessarily send a single Status: it sends a separate Status
+		// for each element you render! The reason this works is that the
+		// MCU replies to each Display Status with a Display Processed
+		// Event. That means you can call UX_DISPLAY many times in a row
+		// without disrupting SEPROXYHAL. Anyway, as far as we're
+		// concerned, it's simpler to think of UX_DISPLAY as sending just
+		// a single Status.
 	}
+	// Reset the initialization state.
+	ctx->initialized = false;
+	
 }
 
 // It is not necessary to completely understand this handler to write your own
