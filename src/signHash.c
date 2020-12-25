@@ -100,7 +100,7 @@ static unsigned int ui_signHash_approve_button(unsigned int button_mask, unsigne
 		// Derive the secret key and sign the hash, storing the signature in
 		// the APDU buffer. This is the first Sia-specific function we've
 		// encountered; it is defined in sia.c.
-		deriveAndSign(G_io_apdu_buffer, ctx->keyIndex, ctx->hash);
+		deriveAndSign(G_io_apdu_buffer, ctx->keyIndex, ctx->hash, 32);
 		// Send the data in the APDU buffer, along with a special code that
 		// indicates approval. 64 is the number of bytes in the response APDU,
 		// sans response code.

@@ -82,4 +82,4 @@ void deriveSiaKeypair(uint32_t index, cx_ecfp_private_key_t *privateKey, cx_ecfp
 // deriveAndSign derives an Ed25519 private key from an index and the
 // Ledger seed, and uses it to produce a 64-byte signature of the provided
 // 32-byte hash. The key is cleared from memory after signing.
-void deriveAndSign(uint8_t *dst, uint32_t index, const uint8_t *hash);
+void deriveAndSign(uint8_t *dst, uint32_t index, const uint8_t *hash, const uint16_t msg_length);
