@@ -322,7 +322,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 	PRINTF("%u\n", dataLength);
 	txn_update(&ctx->txn, dataBuffer, dataLength);
 
-	if (ctx->txn.buflen < 300) { //TODO: Fixe grenze hier entfernen
+	if (dataLength >= 255) { //TODO: Fixe grenze hier entfernen
 		//Wenn noch nicht alle Daten gelesen wurde, die restlichen Daten noch anfordern
 		io_exchange_with_code(SW_OK, 0);
 	}else {
