@@ -26,6 +26,7 @@
 #include "blake2b.h"
 #include "sia.h"
 #include "sia_ux.h"
+#include "tiny-json.h"
 
 static calcTxnHashContext_t *ctx = &global.calcTxnHashContext;
 
@@ -124,7 +125,7 @@ static const bagl_element_t* ui_prepro_calcTxnHash_elem(const bagl_element_t *el
 // display. It stores the type of the element in labelStr, and a human-
 // readable representation of the element in fullStr. As in previous screens,
 // partialStr holds the visible portion of fullStr.
-/* static void fmtTxnElem(calcTxnHashContext_t *ctx) {
+static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 	txn_state_t *txn = &ctx->txn;
 
 	switch (txn->elemType) {
@@ -185,7 +186,7 @@ static const bagl_element_t* ui_prepro_calcTxnHash_elem(const bagl_element_t *el
 	// Regardless of what we're displaying, the displayIndex should always be
 	// reset to 0, because we're displaying the beginning of fullStr.
 	ctx->displayIndex = 0;
-} */
+}
 
 static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigned int button_mask_counter) {
 	switch (button_mask) {
@@ -328,6 +329,69 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 	}else {
 
 		if (ctx->sign) {
+
+
+			uint8_t json[ctx->txn.buflen];
+			os_memmove(&json, &ctx->txn.buf, ctx->txn.buflen);
+
+			enum { MAX_FIELDS = 20 };
+			json_t pool[ MAX_FIELDS ];
+
+			char str[] = "{ \"name\": \"peter\", \"age\": 32 }";	
+
+			json_t const* parent = json_create( &json, pool, MAX_FIELDS );
+
+			json_t const* namefield = json_getProperty( parent, "contract" );
+			if ( namefield == NULL ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
+			if ( json_getType( namefield ) != JSON_TEXT ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
+
+			json_t const* kwargs = json_getProperty( parent, "kwargs" );
+			if ( !kwargs || JSON_OBJ != json_getType( kwargs ) ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
+			json_t const* to = json_getProperty( kwargs, "to" );
+			if ( !to ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
+			json_t const* amount = json_getProperty( kwargs, "amount" );
+			if ( !amount ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
+
+			char const* nameValue = json_getValue( namefield );
+			char const* toValue = json_getValue( to );
+			char const* amountValue = json_getValue( amount );
+
+			PRINTF( "%s%s%s", "Contract: '", nameValue, "'.\n" );
+			PRINTF( "%s%s%s", "To: '", toValue, "'.\n" );
+			PRINTF( "%s%s%s", "Amount: '", amountValue, "'.\n" );
+
+
+			//verify transaction
+			//cJSON *lamden_json = cJSON_ParseWithLength(&ctx->txn.buf, ctx->txn.buflen);
+			//cJSON *json = cJSON_Parse("{test: test}");
+			/*if (lamden_json == NULL)
+			{
+				THROW(SW_IMPROPER_INIT); //TODO: Hier neuer Return Code für invalid JSON erstellen (akutuell aus Zeile 318 kopiert)
+			}
+
+			const cJSON *contract;
+			contract = cJSON_GetObjectItemCaseSensitive(lamden_json, "contract");
+			if (cJSON_IsString(contract) && (contract->valuestring != NULL))
+			{
+				PRINTF("Contract Name: %s\n", contract->valuestring);
+			}*/
+
+
 			os_memmove(ctx->fullStr, "with Key #", 10);
 			bin2dec(ctx->fullStr+10, ctx->keyIndex);
 			os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
