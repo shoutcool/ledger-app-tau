@@ -20,6 +20,13 @@ typedef enum {
     TXN_STATE_FINISHED, // reached end of transaction
 } txnDecoderState_e;
 
+// txnElemType_e indicates a transaction element type.
+typedef enum {
+	TXN_ELEM_CONTRACT,
+	TXN_ELEM_TO,
+	TXN_ELEM_AMOUNT
+} txnElemType_e;
+
 // txn_state_t is a helper object for computing the SigHash of a streamed
 // transaction.
 typedef struct {
