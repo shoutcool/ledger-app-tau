@@ -34,6 +34,7 @@ typedef struct {
 	uint16_t buflen;  // number of valid bytes in buf
 	uint16_t pos;     // mid-decode offset; reset to 0 after each elem
 
+	txnElemType_e elemType; // type of most-recently-seen element
 	uint64_t sliceLen;      // most-recently-seen slice length prefix
 	uint16_t sliceIndex;    // offset within current element slice
 
