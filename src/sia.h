@@ -35,6 +35,7 @@ typedef struct {
 	uint16_t pos;     // mid-decode offset; reset to 0 after each elem
 
 	txnElemType_e elemType; // type of most-recently-seen element
+	txnDecoderState_e decoderState; //current decoder state
 	uint64_t sliceLen;      // most-recently-seen slice length prefix
 	uint16_t sliceIndex;    // offset within current element slice
 
@@ -45,6 +46,10 @@ typedef struct {
 //1e07f983734ad05973708d43ea3dd881b0caabcc5d61a5825ba7b93660272f7b SHA256
 
 	uint8_t sigHash[64]; // buffer to hold final hash
+
+	uint8_t contractName[128];
+	uint8_t amount[128];
+	uint8_t to[128];
 
 	uint8_t outVal[128]; // most-recently-seen currency value, in decimal
 	uint8_t valLen;      // length of outVal

@@ -27,8 +27,176 @@
 #include "sia.h"
 #include "sia_ux.h"
 #include "tiny-json.h"
+#include "string.h"
 
 static calcTxnHashContext_t *ctx = &global.calcTxnHashContext;
+
+// This is a helper function that prepares an element of the transaction for
+// display. It stores the type of the element in labelStr, and a human-
+// readable representation of the element in fullStr. As in previous screens,
+// partialStr holds the visible portion of fullStr.
+static void fmtTxnElem(calcTxnHashContext_t *ctx) {
+	txn_state_t *txn = &ctx->txn;
+
+	switch (txn->elemType) {
+
+	case TXN_ELEM_CONTRACT:
+		// Miner fees only have one part.
+		os_memmove(ctx->labelStr, "Contract:\0", 10);
+		os_memmove(ctx->fullStr, txn->contractName, sizeof(txn->contractName));
+		ctx->elemLen = strlen(txn->contractName);
+		os_memmove(ctx->partialStr, ctx->fullStr, 12);
+		ctx->elemPart = 0;
+		break;
+
+	case TXN_ELEM_AMOUNT:
+		// Miner fees only have one part.
+		os_memmove(ctx->labelStr, "Amount:\0", 8);
+		os_memmove(ctx->fullStr, txn->amount, sizeof(txn->amount));
+		PRINTF("Amount: %s", txn->amount);
+		os_memmove(ctx->fullStr + 1, " TAU", 5);
+		ctx->elemLen = strlen(txn->amount);
+		os_memmove(ctx->partialStr, ctx->fullStr, 12);
+
+		ctx->elemPart = 0;
+		break;
+
+	case TXN_ELEM_TO:
+		// Miner fees only have one part.
+		os_memmove(ctx->labelStr, "To:\0", 4);
+		bin2dec(ctx->labelStr+2, txn->sliceIndex);
+		os_memmove(ctx->fullStr, txn->to, sizeof(txn->to));
+		ctx->elemLen = strlen(txn->to);
+		os_memmove(ctx->partialStr, ctx->fullStr, 12);
+		ctx->elemPart = 0;
+		break;
+	
+
+	default:
+		// This should never happen.
+		io_exchange_with_code(SW_DEVELOPER_ERR, 0);
+		ui_idle();
+		break;
+	}
+
+	// Regardless of what we're displaying, the displayIndex should always be
+	// reset to 0, because we're displaying the beginning of fullStr.
+	ctx->displayIndex = 0;
+}
+
+//*********************************************************************
+// SCREEN: AMOUNT
+//*********************************************************************
+
+static const bagl_element_t ui_amount_compare[] = {
+	UI_BACKGROUND(),
+	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_LEFT),
+	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_RIGHT),
+	UI_TEXT(0x00, 0, 12, 128, global.calcTxnHashContext.labelStr),
+	UI_TEXT(0x00, 0, 26, 128, global.calcTxnHashContext.partialStr),
+};
+
+
+static const bagl_element_t* ui_prepro_amount_compare(const bagl_element_t *element) {
+	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
+	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
+		return NULL;
+	}
+	return element;
+}
+
+// This is the button handler for the comparison screen. Unlike the approval
+// button handler, this handler doesn't send any data to the computer.
+static unsigned int ui_amount_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
+	switch (button_mask) {
+	case BUTTON_LEFT:
+	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
+		PRINTF("LEFT");
+		if (ctx->displayIndex > 0) {
+			ctx->displayIndex--;
+		}
+		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
+		UX_REDISPLAY();
+		break;
+
+	case BUTTON_RIGHT:
+	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
+		PRINTF("RIGHT");
+		if (ctx->displayIndex < ctx->elemLen-12) {
+			ctx->displayIndex++;
+		}
+		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
+		UX_REDISPLAY();
+		break;
+
+	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
+		PRINTF("CONFIRM");	
+		ui_idle();
+		break;
+	}
+	return 0;
+}
+
+
+//*********************************************************************
+// SCREEN: CONTRACT
+//*********************************************************************
+
+
+static const bagl_element_t ui_contract_compare[] = {
+	UI_BACKGROUND(),
+	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_LEFT),
+	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_RIGHT),
+	UI_TEXT(0x00, 0, 12, 128, global.calcTxnHashContext.labelStr),
+	UI_TEXT(0x00, 0, 26, 128, global.calcTxnHashContext.partialStr),
+};
+
+
+static const bagl_element_t* ui_prepro_contract_compare(const bagl_element_t *element) {
+	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
+	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
+		return NULL;
+	}
+	return element;
+}
+
+// This is the button handler for the comparison screen. Unlike the approval
+// button handler, this handler doesn't send any data to the computer.
+static unsigned int ui_contract_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
+	switch (button_mask) {
+	case BUTTON_LEFT:
+	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
+		PRINTF("LEFT");
+		if (ctx->displayIndex > 0) {
+			ctx->displayIndex--;
+		}
+		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
+		UX_REDISPLAY();
+		break;
+
+	case BUTTON_RIGHT:
+	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
+		PRINTF("RIGHT");
+		if (ctx->displayIndex < ctx->elemLen-12) {
+			ctx->displayIndex++;
+		}
+		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
+		UX_REDISPLAY();
+		break;
+
+	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
+		PRINTF("CONFIRM");	
+
+		ctx->txn.elemType=TXN_ELEM_AMOUNT;
+		fmtTxnElem(ctx);
+
+		UX_DISPLAY(ui_amount_compare, ui_prepro_amount_compare);
+		break;
+	}
+	return 0;
+}
+
+
 
 static const bagl_element_t ui_calcTxnHash_compare[] = {
 	UI_BACKGROUND(),
@@ -75,8 +243,8 @@ static unsigned int ui_calcTxnHash_compare_button(unsigned int button_mask, unsi
 
 static const bagl_element_t ui_calcTxnHash_sign[] = {
 	UI_BACKGROUND(),
-	UI_ICON_LEFT(0x00, BAGL_GLYPH_ICON_CROSS),
-	UI_ICON_RIGHT(0x00, BAGL_GLYPH_ICON_CHECK),
+	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_CROSS),
+	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_CHECK),
 	UI_TEXT(0x00, 0, 12, 128, "Sign this Txn"),
 	UI_TEXT(0x00, 0, 26, 128, global.calcTxnHashContext.fullStr), // "with Key #123?"
 };
@@ -114,84 +282,24 @@ static const bagl_element_t ui_calcTxnHash_elem[] = {
 };
 
 static const bagl_element_t* ui_prepro_calcTxnHash_elem(const bagl_element_t *element) {
+	PRINTF("1: %d", ctx->displayIndex);
+	PRINTF("2: %d", ctx->elemLen);
 	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
 	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
 		return NULL;
 	}
 	return element;
+	
 }
 
-// This is a helper function that prepares an element of the transaction for
-// display. It stores the type of the element in labelStr, and a human-
-// readable representation of the element in fullStr. As in previous screens,
-// partialStr holds the visible portion of fullStr.
-static void fmtTxnElem(calcTxnHashContext_t *ctx) {
-	txn_state_t *txn = &ctx->txn;
 
-	switch (txn->elemType) {
-	case TXN_ELEM_SC_OUTPUT:
-		os_memmove(ctx->labelStr, "Siacoin Output #", 16);
-		bin2dec(ctx->labelStr+16, txn->sliceIndex);
-		// An element can have multiple screens. For each siacoin output, the
-		// user needs to see both the destination address and the amount.
-		// These are rendered in separate screens, and elemPart is used to
-		// identify which screen is being viewed.
-		if (ctx->elemPart == 0) {
-			os_memmove(ctx->fullStr, txn->outAddr, sizeof(txn->outAddr));
-			os_memmove(ctx->partialStr, ctx->fullStr, 12);
-			ctx->elemLen = 76;
-			ctx->elemPart++;
-		} else {
-			os_memmove(ctx->fullStr, txn->outVal, sizeof(txn->outVal));
-			ctx->elemLen = formatSC(ctx->fullStr, txn->valLen);
-			os_memmove(ctx->partialStr, ctx->fullStr, 12);
-			ctx->elemPart = 0;
-		}
-		break;
-
-	case TXN_ELEM_SF_OUTPUT:
-		os_memmove(ctx->labelStr, "Siafund Output #", 16);
-		bin2dec(ctx->labelStr+16, txn->sliceIndex);
-		if (ctx->elemPart == 0) {
-			os_memmove(ctx->fullStr, txn->outAddr, sizeof(txn->outAddr));
-			os_memmove(ctx->partialStr, ctx->fullStr, 12);
-			ctx->elemLen = 76;
-			ctx->elemPart++;
-		} else {
-			os_memmove(ctx->fullStr, txn->outVal, sizeof(txn->outVal));
-			os_memmove(ctx->fullStr+txn->valLen, " SF", 4);
-			os_memmove(ctx->partialStr, ctx->fullStr, 12);
-			ctx->elemLen = txn->valLen + 4;
-			ctx->elemPart = 0;
-		}
-		break;
-
-	case TXN_ELEM_MINER_FEE:
-		// Miner fees only have one part.
-		os_memmove(ctx->labelStr, "Miner Fee #", 11);
-		bin2dec(ctx->labelStr+11, txn->sliceIndex);
-		os_memmove(ctx->fullStr, txn->outVal, sizeof(txn->outVal));
-		ctx->elemLen = formatSC(ctx->fullStr, txn->valLen);
-		os_memmove(ctx->partialStr, ctx->fullStr, 12);
-		ctx->elemPart = 0;
-		break;
-
-	default:
-		// This should never happen.
-		io_exchange_with_code(SW_DEVELOPER_ERR, 0);
-		ui_idle();
-		break;
-	}
-
-	// Regardless of what we're displaying, the displayIndex should always be
-	// reset to 0, because we're displaying the beginning of fullStr.
-	ctx->displayIndex = 0;
-}
 
 static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigned int button_mask_counter) {
+	//PRINTF("Button pressed");
 	switch (button_mask) {
 	case BUTTON_LEFT:
 	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
+		PRINTF("LEFT");
 		if (ctx->displayIndex > 0) {
 			ctx->displayIndex--;
 		}
@@ -201,6 +309,7 @@ static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigne
 
 	case BUTTON_RIGHT:
 	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
+		PRINTF("RIGHT");
 		if (ctx->displayIndex < ctx->elemLen-12) {
 			ctx->displayIndex++;
 		}
@@ -209,7 +318,11 @@ static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigne
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
-		if (ctx->elemPart > 0) {
+		PRINTF("CONFIRM");
+		
+		ui_idle();
+		
+		/*if (ctx->elemPart > 0) {
 			// We're in the middle of displaying a multi-part element; display
 			// the next part.
 			fmtTxnElem(ctx);
@@ -217,7 +330,7 @@ static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigne
 			break;
 		}
 		// Attempt to decode the next element in the transaction.
-		switch (txn_next_elem(&ctx->txn)) {
+		switch (ctx->txn.decoderState) {
 		case TXN_STATE_ERR:
 			// The transaction is invalid.
 			io_exchange_with_code(SW_INVALID_PARAM, 0);
@@ -258,7 +371,7 @@ static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigne
 			// Reset the initialization state.
 			ctx->initialized = false;
 			break;
-		}
+		}*/
 		break;
 	}
 	return 0;
@@ -330,7 +443,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 
 		if (ctx->sign) {
 
-
+			//Validate
 			uint8_t json[ctx->txn.buflen];
 			os_memmove(&json, &ctx->txn.buf, ctx->txn.buflen);
 
@@ -367,36 +480,46 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			}
 
 
-			char const* nameValue = json_getValue( namefield );
+			char const* nameValue = "thisissomesuperduperlongvalue";
 			char const* toValue = json_getValue( to );
 			char const* amountValue = json_getValue( amount );
 
-			PRINTF( "%s%s%s", "Contract: '", nameValue, "'.\n" );
+
+			os_memmove(ctx->txn.contractName, nameValue, strlen(nameValue));
+			os_memmove(ctx->txn.amount, amountValue, strlen(amountValue));
+			os_memmove(ctx->txn.to, toValue, strlen(toValue));
+
+
+
+			//Show on Screen
+			ctx->txn.decoderState=TXN_STATE_READY;
+			//ctx->txn.valLen=strlen(nameValue);
+			//os_memmove(ctx->txn.outVal, nameValue, strlen(nameValue));
+			ctx->txn.sliceIndex++;
+			
+			ctx->elemPart = 0;
+			fmtTxnElem(ctx);
+			
+			//UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
+			UX_DISPLAY(ui_contract_compare, ui_prepro_contract_compare);
+			*flags |= IO_ASYNCH_REPLY;
+			UX_REDISPLAY()
+
+
+
+			/*PRINTF( "%s%s%s", "Contract: '", nameValue, "'.\n" );
 			PRINTF( "%s%s%s", "To: '", toValue, "'.\n" );
-			PRINTF( "%s%s%s", "Amount: '", amountValue, "'.\n" );
+			PRINTF( "%s%s%s", "Amount: '", amountValue, "'.\n" );*/
 
 
-			//verify transaction
-			//cJSON *lamden_json = cJSON_ParseWithLength(&ctx->txn.buf, ctx->txn.buflen);
-			//cJSON *json = cJSON_Parse("{test: test}");
-			/*if (lamden_json == NULL)
-			{
-				THROW(SW_IMPROPER_INIT); //TODO: Hier neuer Return Code für invalid JSON erstellen (akutuell aus Zeile 318 kopiert)
-			}
 
-			const cJSON *contract;
-			contract = cJSON_GetObjectItemCaseSensitive(lamden_json, "contract");
-			if (cJSON_IsString(contract) && (contract->valuestring != NULL))
-			{
-				PRINTF("Contract Name: %s\n", contract->valuestring);
-			}*/
-
-
-			os_memmove(ctx->fullStr, "with Key #", 10);
+			/*os_memmove(ctx->fullStr, "with Key #", 10);
 			bin2dec(ctx->fullStr+10, ctx->keyIndex);
 			os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
 			UX_DISPLAY(ui_calcTxnHash_sign, NULL);
-			*flags |= IO_ASYNCH_REPLY;
+			*flags |= IO_ASYNCH_REPLY;*/
+
+			
 		} else {
 			os_memmove(G_io_apdu_buffer, ctx->txn.sigHash, 32);
 			io_exchange_with_code(SW_OK, 32);
