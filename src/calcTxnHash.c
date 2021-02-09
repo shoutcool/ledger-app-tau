@@ -63,7 +63,6 @@ static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 	case TXN_ELEM_TO:
 		// Miner fees only have one part.
 		os_memmove(ctx->labelStr, "To:\0", 4);
-		bin2dec(ctx->labelStr+2, txn->sliceIndex);
 		os_memmove(ctx->fullStr, txn->to, sizeof(txn->to));
 		ctx->elemLen = strlen(txn->to);
 		os_memmove(ctx->partialStr, ctx->fullStr, 12);
@@ -164,11 +163,13 @@ static unsigned int ui_to_compare_button(unsigned int button_mask, unsigned int 
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
+		//ui_idle();
 
 		os_memmove(ctx->fullStr, "with Key #", 10);
 		bin2dec(ctx->fullStr+10, ctx->keyIndex);
 		os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
 		UX_DISPLAY(ui_calcTxnHash_sign, NULL);
+		
 		break;
 	}
 	return 0;
@@ -202,7 +203,6 @@ static unsigned int ui_amount_compare_button(unsigned int button_mask, unsigned 
 	switch (button_mask) {
 	case BUTTON_LEFT:
 	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
-		PRINTF("LEFT");
 		if (ctx->displayIndex > 0) {
 			ctx->displayIndex--;
 		}
@@ -212,7 +212,6 @@ static unsigned int ui_amount_compare_button(unsigned int button_mask, unsigned 
 
 	case BUTTON_RIGHT:
 	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
-		PRINTF("RIGHT");
 		if (ctx->displayIndex < ctx->elemLen-12) {
 			ctx->displayIndex++;
 		}
@@ -221,9 +220,6 @@ static unsigned int ui_amount_compare_button(unsigned int button_mask, unsigned 
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
-		PRINTF("CONFIRM");	
-		//ui_idle();
-
 		ctx->txn.elemType=TXN_ELEM_TO;
 		fmtTxnElem(ctx);
 
@@ -279,6 +275,7 @@ static unsigned int ui_contract_compare_button(unsigned int button_mask, unsigne
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
+		
 		ctx->txn.elemType=TXN_ELEM_AMOUNT;
 		fmtTxnElem(ctx);
 
@@ -576,7 +573,6 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			//UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
 			UX_DISPLAY(ui_contract_compare, ui_prepro_contract_compare);
 			*flags |= IO_ASYNCH_REPLY;
-			UX_REDISPLAY()
 			
 
 
