@@ -163,12 +163,20 @@ static unsigned int ui_to_compare_button(unsigned int button_mask, unsigned int 
 		break;
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
-		//ui_idle();
+		io_exchange_with_code(SW_OK, 0);
+		ui_idle();
 
-		os_memmove(ctx->fullStr, "with Key #", 10);
+		/*os_memmove(ctx->fullStr, "with Key #", 10);
 		bin2dec(ctx->fullStr+10, ctx->keyIndex);
 		os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
 		UX_DISPLAY(ui_calcTxnHash_sign, NULL);
+
+		
+
+		*/
+
+		// Reset the initialization state.
+		ctx->initialized = false;
 		
 		break;
 	}
@@ -276,10 +284,30 @@ static unsigned int ui_contract_compare_button(unsigned int button_mask, unsigne
 
 	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
 		
-		ctx->txn.elemType=TXN_ELEM_AMOUNT;
-		fmtTxnElem(ctx);
+		switch(ctx->txn.elemType) {
+			case TXN_ELEM_CONTRACT:
+				ctx->txn.elemType=TXN_ELEM_AMOUNT;
+				fmtTxnElem(ctx);
+				UX_REDISPLAY();
+				break;
+			case TXN_ELEM_AMOUNT:
+				ctx->txn.elemType=TXN_ELEM_TO;
+				fmtTxnElem(ctx);
+				UX_REDISPLAY();
+				break;
+			case TXN_ELEM_TO:
+				os_memmove(ctx->fullStr, "with Key #", 10);
+				bin2dec(ctx->fullStr+10, ctx->keyIndex);
+				os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
+				UX_DISPLAY(ui_calcTxnHash_sign, NULL);
 
-		UX_DISPLAY(ui_amount_compare, ui_prepro_amount_compare);
+				// Reset the initialization state.
+				ctx->initialized = false;
+
+				break;
+
+		}
+
 		break;
 	}
 	return 0;
@@ -510,8 +538,10 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			//Validate
 			uint8_t json[ctx->txn.buflen];
 
+			PRINTF("mannomanno2");
+
 			//This line breaks the PRINTFs
-			os_memmove(&json, &ctx->txn.buf, ctx->txn.buflen);
+			os_memmove(json, &ctx->txn.buf, ctx->txn.buflen);
 
 			PRINTF("mannomanno3");
 
@@ -519,9 +549,9 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			enum { MAX_FIELDS = 20 };
 			json_t pool[ MAX_FIELDS ];
 
-			char str[] = "{ \"name\": \"peter\", \"age\": 32 }";	
+			char str[] = "{ \"contract\": \"curr22\", \"kwargs\": {\"to\": \"recipient\", \"amount\": \"13\"} }";	
 
-			json_t const* parent = json_create( &json, pool, MAX_FIELDS );
+			json_t const* parent = json_create( json, pool, MAX_FIELDS );
 
 			json_t const* contractField = json_getProperty( parent, "contract" );
 			if ( contractField == NULL ) {
@@ -568,9 +598,11 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			ctx->txn.sliceIndex++;
 			
 			ctx->elemPart = 0;
+			ctx->txn.elemType=TXN_ELEM_CONTRACT;
 			fmtTxnElem(ctx);
 			
 			//UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
+			
 			UX_DISPLAY(ui_contract_compare, ui_prepro_contract_compare);
 			*flags |= IO_ASYNCH_REPLY;
 			
