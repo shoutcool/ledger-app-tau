@@ -23,6 +23,7 @@ typedef enum {
 // txnElemType_e indicates a transaction element type.
 typedef enum {
 	TXN_ELEM_CONTRACT,
+	TXN_ELEM_FUNCTION,
 	TXN_ELEM_TO,
 	TXN_ELEM_AMOUNT
 } txnElemType_e;
@@ -48,12 +49,11 @@ typedef struct {
 	uint8_t sigHash[64]; // buffer to hold final hash
 
 	uint8_t contractName[128];
-	uint8_t amount[128];
-	uint8_t to[128];
+	uint8_t functionName[64];
+	uint8_t amount[16];
+	uint8_t to[64];
 
-	uint8_t outVal[128]; // most-recently-seen currency value, in decimal
 	uint8_t valLen;      // length of outVal
-	uint8_t outAddr[77]; // most-recently-seen address
 } txn_state_t;
 
 // txn_init initializes a transaction decoder, preparing it to calculate the

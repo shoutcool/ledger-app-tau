@@ -49,11 +49,20 @@ static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 		ctx->elemPart = 0;
 		break;
 
+	case TXN_ELEM_FUNCTION:
+		// Miner fees only have one part.
+		os_memmove(ctx->labelStr, "Function:\0", 10);
+		os_memmove(ctx->fullStr, txn->functionName, sizeof(txn->functionName));
+		ctx->elemLen = strlen(txn->functionName);
+		os_memmove(ctx->partialStr, ctx->fullStr, 12);
+		ctx->elemPart = 0;
+		break;
+
 	case TXN_ELEM_AMOUNT:
 		// Miner fees only have one part.
 		os_memmove(ctx->labelStr, "Amount:\0", 8);
 		os_memmove(ctx->fullStr, txn->amount, sizeof(txn->amount));
-		os_memmove(ctx->fullStr + 2, " TAU", 5);
+		os_memmove(ctx->fullStr + strlen(txn->amount), " TAU", 5);
 		ctx->elemLen = strlen(txn->amount);
 		os_memmove(ctx->partialStr, ctx->fullStr, 12);
 
@@ -286,6 +295,11 @@ static unsigned int ui_contract_compare_button(unsigned int button_mask, unsigne
 		
 		switch(ctx->txn.elemType) {
 			case TXN_ELEM_CONTRACT:
+				ctx->txn.elemType=TXN_ELEM_FUNCTION;
+				fmtTxnElem(ctx);
+				UX_REDISPLAY();
+				break;
+			case TXN_ELEM_FUNCTION:
 				ctx->txn.elemType=TXN_ELEM_AMOUNT;
 				fmtTxnElem(ctx);
 				UX_REDISPLAY();
@@ -562,6 +576,11 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 				THROW(SW_INVALID_PARAM);
 			}
 
+			json_t const* functionField = json_getProperty( parent, "function" );
+			if ( !functionField ) {
+				THROW(SW_INVALID_PARAM);
+			}
+
 
 			json_t const* kwargs = json_getProperty( parent, "kwargs" );
 			if ( !kwargs || JSON_OBJ != json_getType( kwargs ) ) {
@@ -577,10 +596,13 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			if ( !amount ) {
 				THROW(SW_INVALID_PARAM);
 			}
+
+			
 			
 
 
 			char const* contactValue = json_getValue( contractField );
+			char const* functionValue = json_getValue( functionField );
 			char const* toValue = json_getValue( to );
 			char const* amountValue = json_getValue( amount );
 
@@ -588,6 +610,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			os_memmove(ctx->txn.contractName, contactValue, strlen(contactValue));
 			os_memmove(ctx->txn.amount, amountValue, strlen(amountValue));
 			os_memmove(ctx->txn.to, toValue, strlen(toValue));
+			os_memmove(ctx->txn.functionName, functionValue, strlen(functionValue));
 
 			
 

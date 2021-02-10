@@ -128,69 +128,7 @@ static void advance(txn_state_t *txn) {
 	txn->pos = 0;
 } */
 
-static uint64_t readInt(txn_state_t *txn) {
-	need_at_least(txn, 8);
-	uint64_t u = U8LE(txn->buf, txn->pos);
-	seek(txn, 8);
-	return u;
-}
 
-static void readCurrency(txn_state_t *txn, uint8_t *outVal) {
-	uint64_t valLen = readInt(txn);
-	need_at_least(txn, valLen);
-	if (outVal) {
-		txn->valLen = cur2dec(outVal, txn->buf+txn->pos-8);
-	}
-	seek(txn, valLen);
-}
-
-static void readHash(txn_state_t *txn, uint8_t *outAddr) {
-	need_at_least(txn, 32);
-	if (outAddr) {
-		bin2hex(outAddr, txn->buf+txn->pos, 32);
-		uint8_t checksum[6];
-		blake2b(checksum, sizeof(checksum), txn->buf+txn->pos, 32);
-		bin2hex(outAddr+64, checksum, sizeof(checksum));
-	}
-	seek(txn, 32);
-}
-
-static void readPrefixedBytes(txn_state_t *txn) {
-	uint64_t len = readInt(txn);
-	seek(txn, len);
-}
-
-static void readUnlockConditions(txn_state_t *txn) {
-	readInt(txn); // Timelock
-	uint64_t numKeys = readInt(txn); // PublicKeys
-	while (numKeys --> 0) {
-		seek(txn, 16);          // Algorithm
-		readPrefixedBytes(txn); // Key
-	}
-	readInt(txn); // SignaturesRequired
-}
-
-static void readCoveredFields(txn_state_t *txn) {
-	need_at_least(txn, 1);
-	// for now, we require WholeTransaction = true
-	if (txn->buf[txn->pos] != 1) {
-		PRINTF("3");
-		THROW(TXN_STATE_ERR);
-	}
-	seek(txn, 1);
-	// all other fields must be empty
-	for (int i = 0; i < 10; i++) {
-		if (readInt(txn) != 0) {
-			PRINTF("4");
-			THROW(TXN_STATE_ERR);
-		}
-	}
-}
-
-static void addReplayProtection(cx_blake2b_t *S) {
-	static uint8_t const replayPrefix[] = {0};
-	blake2b_update(S, replayPrefix, 1);
-}
 
 // throws txnDecoderState_e
 /* static void __txn_next_elem(txn_state_t *txn) {
