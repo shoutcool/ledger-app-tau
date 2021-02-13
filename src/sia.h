@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 // exception codes
+#define SW_TXLENGTH_ERR 0x2710
 #define SW_DEVELOPER_ERR 0x6B00
 #define SW_INVALID_PARAM 0x6B01
 #define SW_IMPROPER_INIT 0x6B02
@@ -41,7 +42,6 @@ typedef struct {
 	uint16_t sliceIndex;    // offset within current element slice
 
 	uint16_t sigIndex;   // index of TxnSig being computed
-	cx_blake2b_t blake;  // hash state
 
 //a90b4755908d8ae16cb1efb6b74c92511aa8ce52265ab1ff56620644bbf2094e
 //1e07f983734ad05973708d43ea3dd881b0caabcc5d61a5825ba7b93660272f7b SHA256
@@ -50,7 +50,7 @@ typedef struct {
 
 	uint8_t contractName[128];
 	uint8_t functionName[64];
-	uint8_t amount[16];
+	uint8_t amount[40];
 	uint8_t to[64];
 
 	uint8_t valLen;      // length of outVal

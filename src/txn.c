@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <os.h>
-#include "blake2b.h"
 #include "sia.h"
 
 static void divWW10(uint64_t u1, uint64_t u0, uint64_t *q, uint64_t *r) {
@@ -256,7 +255,7 @@ void txn_update(txn_state_t *txn, uint8_t *in, uint8_t inlen) {
 	// the buffer should never overflow; any elements should always be drained
 	// before the next read.
 	if (txn->buflen + inlen > sizeof(txn->buf)) {
-		THROW(SW_DEVELOPER_ERR);
+		THROW(SW_TXLENGTH_ERR);
 	}
 
 	// append to the buffer

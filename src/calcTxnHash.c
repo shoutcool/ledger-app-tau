@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <os.h>
 #include <os_io_seproxyhal.h>
-#include "blake2b.h"
 #include "sia.h"
 #include "sia_ux.h"
 #include "tiny-json.h"
@@ -63,7 +62,7 @@ static void fmtTxnElem(calcTxnHashContext_t *ctx) {
 		os_memmove(ctx->labelStr, "Amount:\0", 8);
 		os_memmove(ctx->fullStr, txn->amount, sizeof(txn->amount));
 		os_memmove(ctx->fullStr + strlen(txn->amount), " TAU", 5);
-		ctx->elemLen = strlen(txn->amount);
+		ctx->elemLen = strlen(ctx->fullStr);
 		os_memmove(ctx->partialStr, ctx->fullStr, 12);
 
 		ctx->elemPart = 0;
@@ -478,6 +477,15 @@ static unsigned int ui_calcTxnHash_elem_button(unsigned int button_mask, unsigne
 	return 0;
 }
 
+int digits_only(const char *s)
+{
+    while (*s) {
+        if (isdigit(*s++) == 0) return 0;
+    }
+
+    return 1;
+}
+
 // APDU parameters
 #define P1_FIRST        0x00 // 1st packet of multi-packet transfer
 #define P1_MORE         0x80 // nth packet of multi-packet transfer
@@ -568,19 +576,14 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			json_t const* parent = json_create( json, pool, MAX_FIELDS );
 
 			json_t const* contractField = json_getProperty( parent, "contract" );
-			if ( contractField == NULL ) {
-				THROW(SW_INVALID_PARAM);
-			}
-
-			if ( json_getType( contractField ) != JSON_TEXT ) {
+			if ( contractField == NULL || json_getType( contractField ) != JSON_TEXT) {
 				THROW(SW_INVALID_PARAM);
 			}
 
 			json_t const* functionField = json_getProperty( parent, "function" );
-			if ( !functionField ) {
+			if ( !functionField || json_getType( functionField ) != JSON_TEXT) {
 				THROW(SW_INVALID_PARAM);
 			}
-
 
 			json_t const* kwargs = json_getProperty( parent, "kwargs" );
 			if ( !kwargs || JSON_OBJ != json_getType( kwargs ) ) {
@@ -588,7 +591,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			}
 
 			json_t const* to = json_getProperty( kwargs, "to" );
-			if ( !to ) {
+			if ( !to || json_getType( to ) != JSON_TEXT) {
 				THROW(SW_INVALID_PARAM);
 			}
 
@@ -597,14 +600,70 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 				THROW(SW_INVALID_PARAM);
 			}
 
-			
-			
+
+			char* amountValue;
+
+			//Amount can be an integer or an object (in case of a decimal value)
+			if ( json_getType( amount ) == JSON_INTEGER ) {
+				amountValue = json_getValue( amount );
+				if ( strlen(amountValue) > 9) {
+					THROW(SW_INVALID_PARAM);
+				}
+			} else if ( json_getType( amount ) == JSON_OBJ ){
+				
+				json_t const* fixed = json_getProperty( amount, "__fixed__" );
+				if ( !fixed ) {
+					THROW(SW_INVALID_PARAM);
+				}
+
+				if ( json_getType( fixed ) != JSON_TEXT ) {
+					THROW(SW_INVALID_PARAM);
+				}
+
+				amountValue = json_getValue( fixed );
+				if ( strlen(amountValue) > 40 ) { //9 + . + 30 decimals
+					THROW(SW_INVALID_PARAM);
+				}
+
+				char* character = amountValue;
+				
+				int index = 0;
+				int maxLength = strlen(amountValue);
+				int dotFound = 0;
+				while (*character != '\0'){
+					int isNumber = isdigit(*character);
+					if ( index == 0 && isNumber == 0 ){						
+						THROW(SW_INVALID_PARAM);
+					}
+
+					if ( index > 0 && index < maxLength ){
+						if ( isdigit(*character) == 0 ){
+							if ( *character == '.' ){
+								if (dotFound == 0){
+									dotFound = 1;
+								}else{
+									THROW(SW_INVALID_PARAM);
+								}
+							}else{
+								THROW(SW_INVALID_PARAM);
+							}
+						}
+					}
+
+					++index;
+					++character;
+				}
+
+			} else {
+				THROW(SW_INVALID_PARAM);
+			}						
 
 
 			char const* contactValue = json_getValue( contractField );
 			char const* functionValue = json_getValue( functionField );
 			char const* toValue = json_getValue( to );
-			char const* amountValue = json_getValue( amount );
+
+			
 
 
 			os_memmove(ctx->txn.contractName, contactValue, strlen(contactValue));

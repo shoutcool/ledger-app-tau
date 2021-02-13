@@ -22,7 +22,6 @@
 #include <stdbool.h>
 #include <os.h>
 #include <os_io_seproxyhal.h>
-#include "blake2b.h"
 #include "sia.h"
 #include "sia_ux.h"
 
@@ -129,8 +128,7 @@ static unsigned int ui_getPublicKey_approve_button(unsigned int button_mask, uns
 		deriveSiaKeypair(ctx->keyIndex, NULL, &publicKey);
 		extractPubkeyBytes(G_io_apdu_buffer + tx, &publicKey);
 		tx += 32;
-		pubkeyToSiaAddress(G_io_apdu_buffer + tx, &publicKey);
-		tx += 76;
+		
 		// Flush the APDU buffer, sending the response.
 		io_exchange_with_code(SW_OK, tx);
 
@@ -189,8 +187,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 		deriveSiaKeypair(ctx->keyIndex, NULL, &publicKey);
 		extractPubkeyBytes(G_io_apdu_buffer + tx, &publicKey);
 		tx += 32;
-		pubkeyToSiaAddress(G_io_apdu_buffer + tx, &publicKey);
-		tx += 76;
+		
 		// Flush the APDU buffer, sending the response.
 		io_exchange_with_code(SW_OK, tx);
 	}else{

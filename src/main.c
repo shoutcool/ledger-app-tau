@@ -105,7 +105,6 @@
 #include "os.h"
 #include <os_io_seproxyhal.h>
 #include "glyphs.h"
-#include "blake2b.h"
 #include "sia.h"
 #include "sia_ux.h"
 #include <stdint.h>
@@ -201,14 +200,12 @@ typedef void handler_fn_t(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t 
 
 handler_fn_t handleGetVersion;
 handler_fn_t handleGetPublicKey;
-handler_fn_t handleSignHash;
 handler_fn_t handleCalcTxnHash;
 
 static handler_fn_t* lookupHandler(uint8_t ins) {
 	switch (ins) {
 	case INS_GET_VERSION:    return handleGetVersion;
 	case INS_GET_PUBLIC_KEY: return handleGetPublicKey;
-	case INS_SIGN_HASH:      return handleSignHash;
 	case INS_GET_TXN_HASH:   return handleCalcTxnHash;
 	default:                 return NULL;
 	}
@@ -295,6 +292,7 @@ static void sia_main(void) {
 				// codes?
 				switch (e & 0xF000) {
 				case 0x6000:
+					global.calcTxnHashContext.initialized = false;
 				case 0x9000:
 					sw = e;
 					break;
@@ -306,6 +304,7 @@ static void sia_main(void) {
 				G_io_apdu_buffer[tx++] = sw & 0xFF;
 			}
 			FINALLY {
+				
 			}
 		}
 		END_TRY;
