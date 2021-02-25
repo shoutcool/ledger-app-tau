@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <os.h>
 #include <os_io_seproxyhal.h>
-#include "sia.h"
+#include "tau.h"
 #include "ux.h"
 
 // handleGetVersion is the entry point for the getVersion command. It

@@ -23,8 +23,8 @@
 #include <stdbool.h>
 #include <os.h>
 #include <os_io_seproxyhal.h>
-#include "sia.h"
-#include "sia_ux.h"
+#include "tau.h"
+#include "tau.h"
 #include "tiny-json.h"
 #include "string.h"
 
@@ -506,7 +506,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 		// context must not already be initialized. (Otherwise, an attacker
 		// could fool the user by concatenating two transactions.)
 		//
-		// NOTE: ctx->initialized is set to false when the Sia app loads.
+		// NOTE: ctx->initialized is set to false when the app loads.
 		if (ctx->initialized) {
 			THROW(SW_IMPROPER_INIT);
 		}
@@ -519,12 +519,6 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 		// If this is the first packet, it will include the key index and sig
 		// index in addition to the transaction data. Use these to initialize
 		// the ctx and the transaction decoder.
-		////ctx->keyIndex = U4LE(dataBuffer, 0); // NOTE: ignored if !ctx->sign
-		////dataBuffer += 4; dataLength -= 4;
-		////uint16_t sigIndex = U2LE(dataBuffer, 0);
-		//// dataBuffer += 2; dataLength -= 2;
-		// The official Sia Nano S app only signs transactions on the forked
-		// chain. To use the app on dissenting chains, pass false instead.
 		txn_init(&ctx->txn, sigIndex);
 
 		// Set ctx->sign according to P2.
@@ -712,7 +706,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			UX_DISPLAY(ui_calcTxnHash_compare, ui_prepro_calcTxnHash_compare);
 			// The above code does something strange: it calls io_exchange
 			// directly from the command handler. You might wonder: why not
-			// just prepare the APDU buffer and let sia_main call io_exchange?
+			// just prepare the APDU buffer and let tau_main call io_exchange?
 			// The answer, surprisingly, is that we also need to call
 			// UX_DISPLAY, and UX_DISPLAY affects io_exchange in subtle ways.
 			// To understand why, we'll need to dive deep into the Nano S
@@ -750,7 +744,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			//
 			// You may have some picture of the problem now. Imagine we
 			// prepare the APDU buffer, then call UX_DISPLAY, and then let
-			// sia_main send the APDU with io_exchange. What happens at the
+			// tau_main send the APDU with io_exchange. What happens at the
 			// SEPROXYHAL layer? First, UX_DISPLAY will send a Display Status.
 			// Then, io_exchange will send a Command and a General Status. But
 			// no Event was processed between the two Statuses! This causes
@@ -798,7 +792,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 }
 
 // It is not necessary to completely understand this handler to write your own
-// Nano S app; much of it is Sia-specific and will not generalize to other
+// Nano S app; much of it is Tau-specific and will not generalize to other
 // apps. The important part is knowing how to structure handlers that involve
 // multiple APDU exchanges. If you would like to dive deeper into how the
 // handler buffers transaction data and parses elements, proceed to txn.c.
