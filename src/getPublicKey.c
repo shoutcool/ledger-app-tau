@@ -22,8 +22,8 @@
 #include <stdbool.h>
 #include <os.h>
 #include <os_io_seproxyhal.h>
-#include "sia.h"
-#include "sia_ux.h"
+#include "tau.h"
+#include "tau.h"
 
 // Get a pointer to getPublicKey's state variables.
 static getPublicKeyContext_t *ctx = &global.getPublicKeyContext;
@@ -125,7 +125,7 @@ static unsigned int ui_getPublicKey_approve_button(unsigned int button_mask, uns
 		// buffer. Even though we know that tx starts at 0, it's best to
 		// always add it explicitly; this prevents a bug if we reorder the
 		// statements later.
-		deriveSiaKeypair(ctx->keyIndex, NULL, &publicKey);
+		deriveTauKeypair(ctx->keyIndex, NULL, &publicKey);
 		extractPubkeyBytes(G_io_apdu_buffer + tx, &publicKey);
 		tx += 32;
 		
@@ -169,7 +169,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 		// Although THROW is technically a general-purpose exception
 		// mechanism, within a command handler it is basically just a
 		// convenient way of bailing out early and sending an error code to
-		// the computer. The exception will be caught by sia_main, which
+		// the computer. The exception will be caught by tau_main, which
 		// appends the code to the response APDU and sends it, much like
 		// io_exchange_with_code. THROW should not be called from
 		// preprocessors or button handlers.
@@ -184,7 +184,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 	if (ctx->keyIndex == 0x00){
 		uint16_t tx = 0;
 		cx_ecfp_public_key_t publicKey;
-		deriveSiaKeypair(ctx->keyIndex, NULL, &publicKey);
+		deriveTauKeypair(ctx->keyIndex, NULL, &publicKey);
 		extractPubkeyBytes(G_io_apdu_buffer + tx, &publicKey);
 		tx += 32;
 		

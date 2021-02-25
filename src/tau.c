@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <os.h>
 #include <cx.h>
-#include "sia.h"
+#include "tau.h"
 
-void deriveSiaKeypair(uint32_t index, cx_ecfp_private_key_t *privateKey, cx_ecfp_public_key_t *publicKey) {
+void deriveTauKeypair(uint32_t index, cx_ecfp_private_key_t *privateKey, cx_ecfp_public_key_t *publicKey) {
 	uint8_t keySeed[32];
 	cx_ecfp_private_key_t pk;
 
@@ -35,7 +35,7 @@ void extractPubkeyBytes(unsigned char *dst, cx_ecfp_public_key_t *publicKey) {
 
 void deriveAndSign(uint8_t *dst, uint32_t index, const uint8_t *msg, const uint16_t msg_length) {
 	cx_ecfp_private_key_t privateKey;
-	deriveSiaKeypair(index, &privateKey, NULL);
+	deriveTauKeypair(index, &privateKey, NULL);
 
 	//uint8_t a = 0xFF;
 	//uint8_t* ptr = &a;
@@ -78,25 +78,3 @@ int bin2dec(uint8_t *dst, uint64_t n) {
 	return len;
 }
 
-#define SC_ZEROS 24
-
-int formatSC(uint8_t *buf, uint8_t decLen) {
-	if (decLen < SC_ZEROS+1) {
-		// if < 1 SC, pad with leading zeros
-		os_memmove(buf + (SC_ZEROS-decLen)+2, buf, decLen+1);
-		os_memset(buf, '0', SC_ZEROS+2-decLen);
-		decLen = SC_ZEROS + 1;
-	} else {
-		os_memmove(buf + (decLen-SC_ZEROS)+1, buf + (decLen-SC_ZEROS), SC_ZEROS+1);
-	}
-	// add decimal point, trim trailing zeros, and add units
-	buf[decLen-SC_ZEROS] = '.';
-	while (decLen > 0 && buf[decLen] == '0') {
-		decLen--;
-	}
-	if (buf[decLen] == '.') {
-		decLen--;
-	}
-	os_memmove(buf + decLen + 1, " SC", 4);
-	return decLen + 4;
-}

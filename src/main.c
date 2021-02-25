@@ -26,16 +26,16 @@
 // I'll begin by describing the high-level architecture of the app. The entry
 // point is this file, main.c, which initializes the app and runs the APDU
 // request/response loop. The loop reads APDU packets from the computer, which
-// instructs it to run various commands. The Sia app supports three commands,
-// each defined in a separate file: getPublicKey, signHash, and calcTxnHash.
-// These each make use of Sia-specific functions, which are defined in sia.c.
+// instructs it to run various commands. The Tau app supports two commands,
+// each defined in a separate file: getPublicKey and calcTxnHash.
+// These each make use of Tau-specific functions, which are defined in tau.c.
 // Finally, some global variables and helper functions are declared in ux.h.
 //
 // Each command consists of a command handler and a set of screens. Each
 // screen has an associated set of elements that can be rendered, a
 // preprocessor that controls which elements are rendered, and a button
 // handler that processes user input. The command handler is called whenever
-// sia_main receives an APDU requesting that command, and is responsible for
+// tau_main receives an APDU requesting that command, and is responsible for
 // displaying the first screen of the command. Control flow then moves to the
 // button handler for that screen, which selects the next screen to display
 // based on which button was pressed. Button handlers are also responsible for
@@ -68,18 +68,18 @@
 //    IO_ASYNC_REPLY:                           ^Only do this part^
 //    IO_RETURN_AFTER_TX:  ^Only do this part^
 //
-// So a typical command flow looks something like this. We start in sia_main,
+// So a typical command flow looks something like this. We start in tau_main,
 // which is an infinite loop that starts by calling io_exchange. It receives
 // an APDU request from the computer and calls the associated command handler.
 // The handler displays a screen, e.g. "Generate address?", and sets the
-// IO_ASYNC_REPLY flag before returning. Control returns to sia_main, which
+// IO_ASYNC_REPLY flag before returning. Control returns to tau_main, which
 // loops around and calls io_exchange again; due to the flag, it now blocks.
 // Everything is frozen until the user decides which button to press. When
 // they eventually press the "Approve" button, the button handler jumps into
 // action. It generates the address, constructs a response APDU containing
 // that address, calls io_exchange with IO_RETURN_AFTER_TX, and redisplays the
 // main menu. When a new command arrives, it will be received by the blocked
-// io_exchange in sia_main.
+// io_exchange in tau_main.
 //
 // More complex commands may require multiple requests and responses. There
 // are two approaches to handling this. One approach is to treat each command
@@ -88,7 +88,7 @@
 // additional io_exchange calls within the command handler. The other approach
 // is to let the main loop handle all requests, and design the handlers so
 // that they can "pick up where they left off." Both designs have tradeoffs.
-// In the Sia app, the only handler that requires multiple requests is
+// In the Tau app, the only handler that requires multiple requests is
 // calcTxnHash, and it takes the latter approach.
 //
 // On the other end of the spectrum, there are simple commands that do not
@@ -105,17 +105,10 @@
 #include "os.h"
 #include <os_io_seproxyhal.h>
 #include "glyphs.h"
-#include "sia.h"
-#include "sia_ux.h"
+#include "tau.h"
+#include "tau_ux.h"
 #include <stdint.h>
 #include <stdbool.h>
-
-// You may notice that this file includes blake2b.h despite doing no hashing.
-// This is because the Sia app uses the Plan 9 convention for header files:
-// header files may not #include other header files. This file needs ux.h, but
-// ux.h depends on sia.h, which depends on blake2b.h; so all three must be
-// included before we can include ux.h. Feel free to use the more conventional
-// #ifndef guards in your own app.
 
 // These are global variables declared in ux.h. They can't be defined there
 // because multiple files include ux.h; they need to be defined in exactly one
@@ -194,7 +187,7 @@ void io_exchange_with_code(uint16_t code, uint16_t tx) {
 
 // This is the function signature for a command handler. 'flags' and 'tx' are
 // out-parameters that will control the behavior of the next io_exchange call
-// in sia_main. It's common to set *flags |= IO_ASYNC_REPLY, but tx is
+// in tau_main. It's common to set *flags |= IO_ASYNC_REPLY, but tx is
 // typically unused unless the handler is immediately sending a response APDU.
 typedef void handler_fn_t(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx);
 
@@ -229,7 +222,7 @@ static handler_fn_t* lookupHandler(uint8_t ins) {
 // subsequent io_exchange call. The handler may also throw an exception, which
 // will be caught, converted to an error code, appended to the response APDU,
 // and sent in the next io_exchange call.
-static void sia_main(void) {
+static void tau_main(void) {
 	// Mark the transaction context as uninitialized.
 	global.calcTxnHashContext.initialized = false;
 
@@ -247,7 +240,7 @@ static void sia_main(void) {
 		// to explicit THROWs in user code, syscalls (prefixed with os_ or
 		// cx_) may also throw exceptions.
 		//
-		// In sia_main, this TRY block serves to catch any thrown exceptions
+		// In tau_main, this TRY block serves to catch any thrown exceptions
 		// and convert them to response codes, which are then sent in APDUs.
 		// However, EXCEPTION_IO_RESET will be re-thrown and caught by the
 		// "true" main function defined at the bottom of this file.
@@ -414,7 +407,7 @@ __attribute__((section(".boot"))) int main(void) {
 				USB_power(0);
 				USB_power(1);
 				ui_idle();
-				sia_main();
+				tau_main();
 			}
 			CATCH(EXCEPTION_IO_RESET) {
 				// reset IO and UX before continuing

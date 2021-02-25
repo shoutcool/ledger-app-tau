@@ -77,4 +77,4 @@ include $(BOLOS_SDK)/Makefile.rules
 dep/%.d: %.c Makefile
 
 listvariants:
-	@echo VARIANTS COIN sia
+	@echo VARIANTS COIN tau

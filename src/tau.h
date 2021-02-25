@@ -77,20 +77,13 @@ void bin2hex(uint8_t *dst, uint8_t *data, uint64_t inlen);
 // final NUL byte. It returns the length of the string.
 int bin2dec(uint8_t *dst, uint64_t n);
 
-// formatSC converts a decimal string from Hastings to Siacoins. It returns the
-// new length of the string.
-int formatSC(uint8_t *buf, uint8_t decLen);
-
-// extractPubkeyBytes converts a Ledger-style public key to a Sia-friendly
+// extractPubkeyBytes converts a Ledger-style public key to a Tau-friendly
 // 32-byte array.
 void extractPubkeyBytes(unsigned char *dst, cx_ecfp_public_key_t *publicKey);
 
-// pubkeyToSiaAddress converts a Ledger pubkey to a Sia wallet address.
-void pubkeyToSiaAddress(uint8_t *dst, cx_ecfp_public_key_t *publicKey);
-
-// deriveSiaKeypair derives an Ed25519 key pair from an index and the Ledger
+// deriveTauKeypair derives an Ed25519 key pair from an index and the Ledger
 // seed. Either privateKey or publicKey may be NULL.
-void deriveSiaKeypair(uint32_t index, cx_ecfp_private_key_t *privateKey, cx_ecfp_public_key_t *publicKey);
+void deriveTauKeypair(uint32_t index, cx_ecfp_private_key_t *privateKey, cx_ecfp_public_key_t *publicKey);
 
 // deriveAndSign derives an Ed25519 private key from an index and the
 // Ledger seed, and uses it to produce a 64-byte signature of the provided
