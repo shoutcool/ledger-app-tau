@@ -64,3 +64,14 @@ extern unsigned char const C_icon_up_bitmap[];
         extern const bagl_icon_details_t C_icon_up;
         #endif // GLYPH_icon_up_BPP
         #endif // OS_IO_SEPROXYHAL
+#ifndef GLYPH_icon_warning_BPP
+        #define GLYPH_icon_warning_WIDTH 14
+        #define GLYPH_icon_warning_HEIGHT 14
+        #define GLYPH_icon_warning_BPP 1
+extern unsigned int const C_icon_warning_colors[];
+extern unsigned char const C_icon_warning_bitmap[];
+#ifdef OS_IO_SEPROXYHAL
+        #include "os_io_seproxyhal.h"
+        extern const bagl_icon_details_t C_icon_warning;
+        #endif // GLYPH_icon_warning_BPP
+        #endif // OS_IO_SEPROXYHAL

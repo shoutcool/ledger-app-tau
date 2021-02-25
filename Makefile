@@ -45,29 +45,86 @@ delete:
 # Platform #
 ############
 
-DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
+DEFINES += HAVE_UX_LEGACY
+DEFINES += HAVE_UX_FLOW
+DEFINES += OS_IO_SEPROXYHAL
 #ORIG: DEFINES += HAVE_BAGL HAVE_SPRINTF
-DEFINES += HAVE_BAGL HAVE_SPRINTF HAVE_PRINTF PRINTF=screen_printf
+DEFINES += HAVE_BAGL HAVE_SPRINTF
 DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
 DEFINES   += HAVE_LEGACY_PID
 #DEFINES   += CUSTOM_IO_APDU_BUFFER_SIZE=768
 DEFINES += APPVERSION=\"$(APPVERSION)\"
 
+# Nano X Defines
+ifeq ($(TARGET_NAME),TARGET_NANOX)
+    DEFINES     += IO_SEPROXYHAL_BUFFER_SIZE_B=300
+    DEFINES     += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
+    DEFINES     += HAVE_BLE_APDU # basic ledger apdu transport over BLE
+
+    DEFINES     += HAVE_GLO096
+    DEFINES     += HAVE_BAGL BAGL_WIDTH=128 BAGL_HEIGHT=64
+    DEFINES     += HAVE_BAGL_ELLIPSIS # long label truncation feature
+    DEFINES     += HAVE_BAGL_FONT_OPEN_SANS_REGULAR_11PX
+    DEFINES     += HAVE_BAGL_FONT_OPEN_SANS_EXTRABOLD_11PX
+    DEFINES     += HAVE_BAGL_FONT_OPEN_SANS_LIGHT_16PX
+else
+    DEFINES     += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+endif
+
+# Enabling debug PRINTF
+DEBUG = 1
+ifneq ($(DEBUG),0)
+    ifeq ($(TARGET_NAME),TARGET_NANOX)
+        DEFINES   += HAVE_PRINTF PRINTF=mcu_usb_printf
+    else
+        DEFINES   += HAVE_PRINTF PRINTF=screen_printf
+    endif
+else
+    DEFINES   += PRINTF\(...\)=
+endif
+
 ##############
 #  Compiler  #
 ##############
+
+ifneq ($(BOLOS_ENV),)
+    $(info BOLOS_ENV=$(BOLOS_ENV))
+    CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
+    GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
+else
+    $(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
+endif
+
+ifeq ($(CLANGPATH),)
+    $(info CLANGPATH is not set: clang will be used from PATH)
+endif
+
+ifeq ($(GCCPATH),)
+    $(info GCCPATH is not set: arm-none-eabi-* will be used from PATH)
+endif
 
 CC := $(CLANGPATH)clang
 CFLAGS += -O3 -Os
 
 AS := $(GCCPATH)arm-none-eabi-gcc
 LD := $(GCCPATH)arm-none-eabi-gcc
-LDFLAGS += -O3 -Os
+LDFLAGS += -O3 -Os 
 LDLIBS += -lm -lgcc -lc
 
 ##################
 #  Dependencies  #
 ##################
+
+### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
+#APP_SOURCE_PATH  += src
+#SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl
+
+ifeq ($(TARGET_NAME),TARGET_NANOX)
+    SDK_SOURCE_PATH     += lib_blewbxx lib_blewbxx_impl
+    SDK_SOURCE_PATH     += lib_ux
+endif
+
+
 
 # import rules to compile glyphs
 include $(BOLOS_SDK)/Makefile.glyphs

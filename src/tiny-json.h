@@ -39,6 +39,12 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#define isnumber(c) c >= '0' && c <= '9'
+
+#define isxnumber(c) (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
+
+
+
 #define json_containerOf( ptr, type, member ) \
     ((type*)( (char*)ptr - offsetof( type, member ) ))
 

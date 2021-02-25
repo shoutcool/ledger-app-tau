@@ -29,6 +29,29 @@ make load
 ```
 
 
+### Troubleshooting
+
+./clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04/bin/clang --version
+./clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04/bin/clang: error while loading shared libraries: libtinfo.so.5: cannot open shared object file: No such file or directory
+
+```
+sudo apt install libncurses5
+```
+
+### Ledger Nano X
+
+```
+export BOLOS_SDK=/home/thomas/ledger/nanox-secure-sdk
+export CLANGPATH=/opt/clang-llvm/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/
+```
+
+Error when trying to load it on the ledger:
+```
+raise CommException("Invalid status %04x (%s)" % (sw, possibleCause), sw, response)
+ledgerblue.commException.CommException: Exception : Invalid status 69d5 (Unknown reason)
+make: *** [Makefile:39: load] Error 1
+```
+
 This is the official Sia wallet app for the Ledger Nano S.
 
 When installed on a Nano S, the app allows you to generate Sia addresses,

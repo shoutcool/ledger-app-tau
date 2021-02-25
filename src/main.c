@@ -109,6 +109,12 @@
 #include "sia_ux.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "ux.h"
+
+ux_state_t G_ux;
+bolos_ux_params_t G_ux_params;
+
+extern const unsigned short int **__ctype_b_loc (void);
 
 // You may notice that this file includes blake2b.h despite doing no hashing.
 // This is because the Sia app uses the Plan 9 convention for header files:

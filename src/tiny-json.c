@@ -114,7 +114,7 @@ static char getEscape( char ch ) {
 static unsigned char getCharFromUnicode( unsigned char const* str ) {
     unsigned int i;
     for( i = 0; i < 4; ++i )
-        if ( !isxdigit( str[i] ) )
+        if ( !isxnumber( str[i] ) )
             return '\0';
     return '?';
 }
@@ -242,7 +242,7 @@ static char* nullValue( char* ptr, json_t* property ) {
   * @retval Null pointer if any error occur. */
 static char* expValue( char* ptr ) {
     if ( *ptr == '-' || *ptr == '+' ) ++ptr;
-    if ( !isdigit( (int)(*ptr) ) ) return 0;
+    if ( !isnumber( (int)(*ptr) ) ) return 0;
     ptr = goNum( ++ptr );
     return ptr;
 }
@@ -252,7 +252,7 @@ static char* expValue( char* ptr ) {
   * @retval Pointer to first non numerical after the string. If success.
   * @retval Null pointer if any error occur. */
 static char* fraqValue( char* ptr ) {
-    if ( !isdigit( (int)(*ptr) ) ) return 0;
+    if ( !isnumber( (int)(*ptr) ) ) return 0;
     ptr = goNum( ++ptr );
     if ( !ptr ) return 0;
     return ptr;
@@ -266,12 +266,12 @@ static char* fraqValue( char* ptr ) {
   * @retval Null pointer if any error occur. */
 static char* numValue( char* ptr, json_t* property ) {
     if ( *ptr == '-' ) ++ptr;
-    if ( !isdigit( (int)(*ptr) ) ) return 0;
+    if ( !isnumber( (int)(*ptr) ) ) return 0;
     if ( *ptr != '0' ) {
         ptr = goNum( ptr );
         if ( !ptr ) return 0;
     }
-    else if ( isdigit( (int)(*++ptr) ) ) return 0;
+    else if ( isnumber( (int)(*++ptr) ) ) return 0;
     property->type = JSON_INTEGER;
     if ( *ptr == '.' ) {
         ptr = fraqValue( ++ptr );
@@ -438,7 +438,7 @@ static char* goBlank( char* str ) {
   * @return The final pointer value or null pointer if the null character was found. */
 static char* goNum( char* str ) {
     for( ; *str != '\0'; ++str ) {
-        if ( !isdigit( (int)(*str) ) )
+        if ( !isnumber( (int)(*str) ) )
             return str;
     }
     return 0;
