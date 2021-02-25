@@ -25,11 +25,11 @@ include $(BOLOS_SDK)/Makefile.defines
 #########
 
 APPNAME    = Lamden
-ICONNAME   = nanos_app_sia.gif
-APPVERSION = 0.4.2
+ICONNAME   = lamden.gif
+APPVERSION = 1.0.0
 
 # The --path argument here restricts which BIP32 paths the app is allowed to derive.
-APP_LOAD_PARAMS = --appFlags 0x40 --path "44'/789'" --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS = --appFlags 0x40 --path "44'/789'" --curve ed25519 $(COMMON_LOAD_PARAMS)
 APP_SOURCE_PATH = src
 SDK_SOURCE_PATH = lib_stusb lib_stusb_impl
 
@@ -50,6 +50,7 @@ DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
 DEFINES += HAVE_BAGL HAVE_SPRINTF HAVE_PRINTF PRINTF=screen_printf
 DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
 DEFINES   += HAVE_LEGACY_PID
+#DEFINES   += CUSTOM_IO_APDU_BUFFER_SIZE=768
 DEFINES += APPVERSION=\"$(APPVERSION)\"
 
 ##############
