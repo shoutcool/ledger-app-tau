@@ -181,34 +181,21 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 	ctx->keyIndex = U4LE(dataBuffer, 0);
 	ctx->genAddr = (p2 == P2_DISPLAY_ADDRESS);
 
-	if (ctx->keyIndex == 0x00){
-		uint16_t tx = 0;
-		cx_ecfp_public_key_t publicKey;
-		deriveTauKeypair(ctx->keyIndex, NULL, &publicKey);
-		extractPubkeyBytes(G_io_apdu_buffer + tx, &publicKey);
-		tx += 32;
-		
-		// Flush the APDU buffer, sending the response.
-		io_exchange_with_code(SW_OK, tx);
-	}else{
-
-		// Prepare the approval screen, filling in the header and body text.
-		if (ctx->genAddr) {
-			os_memmove(ctx->typeStr, "Generate Address", 17);
-			os_memmove(ctx->keyStr, "from Key #", 10);
-			int n = bin2dec(ctx->keyStr+10, ctx->keyIndex);
-			os_memmove(ctx->keyStr+10+n, "?", 2);
-		} else {
-			os_memmove(ctx->typeStr, "Generate Public", 16);
-			os_memmove(ctx->keyStr, "Key #", 5);
-			int n = bin2dec(ctx->keyStr+5, ctx->keyIndex);
-			os_memmove(ctx->keyStr+5+n, "?", 2);
-		}
-		UX_DISPLAY(ui_getPublicKey_approve, NULL);
-		
-		*flags |= IO_ASYNCH_REPLY;
-
+	// Prepare the approval screen, filling in the header and body text.
+	if (ctx->genAddr) {
+		os_memmove(ctx->typeStr, "Generate Address", 17);
+		os_memmove(ctx->keyStr, "from Key #", 10);
+		int n = bin2dec(ctx->keyStr+10, ctx->keyIndex);
+		os_memmove(ctx->keyStr+10+n, "?", 2);
+	} else {
+		os_memmove(ctx->typeStr, "Generate Public", 16);
+		os_memmove(ctx->keyStr, "Key #", 5);
+		int n = bin2dec(ctx->keyStr+5, ctx->keyIndex);
+		os_memmove(ctx->keyStr+5+n, "?", 2);
 	}
+	UX_DISPLAY(ui_getPublicKey_approve, NULL);
+	
+	*flags |= IO_ASYNCH_REPLY;
 
 
 
