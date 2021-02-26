@@ -23,7 +23,7 @@
 #include <os.h>
 #include <os_io_seproxyhal.h>
 #include "tau.h"
-#include "tau.h"
+#include "tau_ux.h"
 
 // Get a pointer to getPublicKey's state variables.
 static getPublicKeyContext_t *ctx = &global.getPublicKeyContext;

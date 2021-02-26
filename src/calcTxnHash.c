@@ -24,7 +24,7 @@
 #include <os.h>
 #include <os_io_seproxyhal.h>
 #include "tau.h"
-#include "tau.h"
+#include "tau_ux.h"
 #include "tiny-json.h"
 #include "string.h"
 
@@ -126,132 +126,12 @@ static unsigned int ui_calcTxnHash_sign_button(unsigned int button_mask, unsigne
 	}
 	return 0;
 }
-
-//*********************************************************************
-// SCREEN: TO
-//*********************************************************************
-
-static const bagl_element_t ui_to_compare[] = {
-	UI_BACKGROUND(),
-	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_LEFT),
-	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_RIGHT),
-	UI_TEXT(0x00, 0, 12, 128, global.calcTxnHashContext.labelStr),
-	UI_TEXT(0x00, 0, 26, 128, global.calcTxnHashContext.partialStr),
-};
-
-
-static const bagl_element_t* ui_prepro_to_compare(const bagl_element_t *element) {
-	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
-	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
-		return NULL;
-	}
-	return element;
-}
-
-// This is the button handler for the comparison screen. Unlike the approval
-// button handler, this handler doesn't send any data to the computer.
-static unsigned int ui_to_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
-	switch (button_mask) {
-	case BUTTON_LEFT:
-	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
-		if (ctx->displayIndex > 0) {
-			ctx->displayIndex--;
-		}
-		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
-		UX_REDISPLAY();
-		break;
-
-	case BUTTON_RIGHT:
-	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
-		if (ctx->displayIndex < ctx->elemLen-12) {
-			ctx->displayIndex++;
-		}
-		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
-		UX_REDISPLAY();
-		break;
-
-	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
-		io_exchange_with_code(SW_OK, 0);
-		ui_idle();
-
-		/*os_memmove(ctx->fullStr, "with Key #", 10);
-		bin2dec(ctx->fullStr+10, ctx->keyIndex);
-		os_memmove(ctx->fullStr+10+(bin2dec(ctx->fullStr+10, ctx->keyIndex)), "?", 2);
-		UX_DISPLAY(ui_calcTxnHash_sign, NULL);
-
-		
-
-		*/
-
-		// Reset the initialization state.
-		ctx->initialized = false;
-		
-		break;
-	}
-	return 0;
-}
-
-
-//*********************************************************************
-// SCREEN: AMOUNT
-//*********************************************************************
-
-static const bagl_element_t ui_amount_compare[] = {
-	UI_BACKGROUND(),
-	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_LEFT),
-	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_RIGHT),
-	UI_TEXT(0x00, 0, 12, 128, global.calcTxnHashContext.labelStr),
-	UI_TEXT(0x00, 0, 26, 128, global.calcTxnHashContext.partialStr),
-};
-
-
-static const bagl_element_t* ui_prepro_amount_compare(const bagl_element_t *element) {
-	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
-	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
-		return NULL;
-	}
-	return element;
-}
-
-// This is the button handler for the comparison screen. Unlike the approval
-// button handler, this handler doesn't send any data to the computer.
-static unsigned int ui_amount_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
-	switch (button_mask) {
-	case BUTTON_LEFT:
-	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
-		if (ctx->displayIndex > 0) {
-			ctx->displayIndex--;
-		}
-		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
-		UX_REDISPLAY();
-		break;
-
-	case BUTTON_RIGHT:
-	case BUTTON_EVT_FAST | BUTTON_RIGHT: // SEEK RIGHT
-		if (ctx->displayIndex < ctx->elemLen-12) {
-			ctx->displayIndex++;
-		}
-		os_memmove(ctx->partialStr, ctx->fullStr+ctx->displayIndex, 12);
-		UX_REDISPLAY();
-		break;
-
-	case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // PROCEED
-		ctx->txn.elemType=TXN_ELEM_TO;
-		fmtTxnElem(ctx);
-
-		UX_DISPLAY(ui_to_compare, ui_prepro_to_compare);
-		break;
-	}
-	return 0;
-}
-
-
 //*********************************************************************
 // SCREEN: CONTRACT
 //*********************************************************************
 
 
-static const bagl_element_t ui_contract_compare[] = {
+static const bagl_element_t ui_tx_compare[] = {
 	UI_BACKGROUND(),
 	UI_ICON_LEFT(0x01, BAGL_GLYPH_ICON_LEFT),
 	UI_ICON_RIGHT(0x02, BAGL_GLYPH_ICON_RIGHT),
@@ -260,7 +140,7 @@ static const bagl_element_t ui_contract_compare[] = {
 };
 
 
-static const bagl_element_t* ui_prepro_contract_compare(const bagl_element_t *element) {
+static const bagl_element_t* ui_prepro_tx_compare(const bagl_element_t *element) {
 	if ((element->component.userid == 1 && ctx->displayIndex == 0) ||
 	    (element->component.userid == 2 && ((ctx->elemLen < 12) || (ctx->displayIndex == ctx->elemLen-12)))) {
 		return NULL;
@@ -270,7 +150,7 @@ static const bagl_element_t* ui_prepro_contract_compare(const bagl_element_t *el
 
 // This is the button handler for the comparison screen. Unlike the approval
 // button handler, this handler doesn't send any data to the computer.
-static unsigned int ui_contract_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
+static unsigned int ui_tx_compare_button(unsigned int button_mask, unsigned int button_mask_counter) {
 	switch (button_mask) {
 	case BUTTON_LEFT:
 	case BUTTON_EVT_FAST | BUTTON_LEFT: // SEEK LEFT
@@ -679,7 +559,7 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			
 			//UX_DISPLAY(ui_calcTxnHash_elem, ui_prepro_calcTxnHash_elem);
 			
-			UX_DISPLAY(ui_contract_compare, ui_prepro_contract_compare);
+			UX_DISPLAY(ui_tx_compare, ui_prepro_tx_compare);
 			*flags |= IO_ASYNCH_REPLY;
 			
 
