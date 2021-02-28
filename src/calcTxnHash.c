@@ -392,7 +392,13 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 		}
 		ctx->initialized = true;
 
-		ctx->keyIndex = 0x00000000; // aktuell wird nur Key 0 unterstützt
+		//PRINTF("%u\n", dataLength);
+
+		ctx->keyIndex = U4LE(dataBuffer, 0); // NOTE: ignored if !ctx->sign
+		dataBuffer += 4; dataLength -= 4;
+
+		//PRINTF("%u\n", ctx->keyIndex);
+
 		uint16_t sigIndex = 0x0000; // SigIndex ist auch immer 0 (was auch immer das ist)
 
 
@@ -418,13 +424,13 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 	
 
 	// Add the new data to transaction decoder.
-	PRINTF("%u\n", dataLength);
+	//PRINTF("%u\n", dataLength);
 	txn_update(&ctx->txn, dataBuffer, dataLength);
 
 	
 
 
-	if (dataLength >= 255) { //TODO: Fixe grenze hier entfernen
+	if (p1 == P1_FIRST && dataLength >= 251 || dataLength >= 255) { //First Package: 4 Bytes für index, rest payload
 		//Wenn noch nicht alle Daten gelesen wurde, die restlichen Daten noch anfordern
 		io_exchange_with_code(SW_OK, 0);
 	}else {
