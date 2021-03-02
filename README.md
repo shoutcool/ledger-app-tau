@@ -1,33 +1,5 @@
 # ledger-app-tau
 
-python -m ledgerblue.genCAPair
-Public key : 042479eb81ea052b1b23b2dba4d54bc087b250f616951ba2da731bdb826235bc27883dff0931a1af6e711c8a575cef9c10e38fc0e0f9fc8aaecc7042fc5861f707
-Private key: ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
-
-## Custom Zertifikat installieren
-Damit muss man nicht immer den Code eingeben muss.
-Funktioniert nur auf der DEBUG Firmware!!!
-
-```
-export SCP_PRIVKEY=ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
-```
-
-
-## USB Debugging akivieren
-```
-~/Downloads/usbtool/usbtool -v 0x2c97 log
-```
-
-## Python ENV aktivieren
-```
-source ~/ledger/ledger-env/bin/activate
-```
-
-## Ledger App bauen und auf Ledger Device deployen
-```
-make load
-```
-
 
 This is the official Tau wallet app for the Ledger Nano S.
 
@@ -91,3 +63,32 @@ introducing a vulnerability. Therefore, an app should display all data by
 default, and omit data only after subjecting the omission to extreme scrutiny.
 The Tau app adheres to this principle more closely than most Ledger apps, and
 as a result is not affected by certain vulnerabilities affecting those apps.
+
+## Developer Notes
+
+python -m ledgerblue.genCAPair
+Public key : 042479eb81ea052b1b23b2dba4d54bc087b250f616951ba2da731bdb826235bc27883dff0931a1af6e711c8a575cef9c10e38fc0e0f9fc8aaecc7042fc5861f707
+Private key: ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
+
+## Custom certifikat installation
+Only works on the DEBUG firmware!!! No need to enter the pin code on every app-installation
+
+```
+export SCP_PRIVKEY=ef7cff4005a6346321beb69f5e4077f5dbb3c04538440d935d6f4ce93340ee93
+```
+
+
+## activate USB Debugging
+```
+~/Downloads/usbtool/usbtool -v 0x2c97 log
+```
+
+## activate Python ENV
+```
+source ~/ledger/ledger-env/bin/activate
+```
+
+## build and deploy ledger app
+```
+make load
+```
