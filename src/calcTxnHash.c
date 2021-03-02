@@ -543,7 +543,15 @@ void handleCalcTxnHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dat
 			char const* functionValue = json_getValue( functionField );
 			char const* toValue = json_getValue( to );
 
-			
+			if (strlen(contactValue) > 128){
+				THROW(SW_INVALID_PARAM);
+			}else if (strlen(functionValue) > 64){
+				THROW(SW_INVALID_PARAM);
+			}else if (strlen(amountValue) > 40){
+				THROW(SW_INVALID_PARAM);
+			}else if (strlen(toValue) > 64){
+				THROW(SW_INVALID_PARAM);
+			}
 
 
 			os_memmove(ctx->txn.contractName, contactValue, strlen(contactValue));
