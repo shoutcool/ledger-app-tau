@@ -18,7 +18,7 @@ your Ledger Nano S, follow Ledger's [setup instructions](https://ledger.readthed
 
 ## Usage
 
-Please refer to our [standalone guide](url-to-be-defined) for a walkthrough that demonstrates how
+Please refer to our [standalone guide](https://lamden-ledger-wallet.web.app/howto) for a walkthrough that demonstrates how
 to generate public keys and sign transactions using the app.
 
 ## Security Model
