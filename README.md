@@ -1,11 +1,11 @@
-# ledger-app-tau
+# ledger-app-tau (Lamden)
 
 
-This is the official Tau wallet app for the Ledger Nano S.
+This is the official Lamden wallet app for the Ledger Nano S.
 
-When installed on a Nano S, the app allows you to generate TAU public keys,
+When installed on a Nano S, the app allows you to generate Lamden public keys,
 sign transactions (currently there is support for the `currency` contract and the `transfer` method).
-The Tau app is the most secure method currently
+The Lamden app is the most secure method currently
 available for performing these actions.
 
 This code also serves as a walkthrough for writing your own Ledger Nano S app.
@@ -13,7 +13,7 @@ The code is heavily commented and describes both the high-level architecture
 and low-level implementation details of Nano S app development. Begin by
 reading `src/main.c`, and the comments will tell you which files to read next.
 
-No binaries are provided at this time. To build and install the Tau app on
+No binaries are provided at this time. To build and install the Lamden app on
 your Ledger Nano S, follow Ledger's [setup instructions](https://ledger.readthedocs.io/en/latest/userspace/getting_started.html).
 
 ## Usage
@@ -23,14 +23,14 @@ to generate public keys and sign transactions using the app.
 
 ## Security Model
 
-The attack surface for using the Tau wallet app on a Ledger Nano S comprises
-the Tau app itself, the system firmware running on the Nano S, the computer
+The attack surface for using the Lamden wallet app on a Ledger Nano S comprises
+the Lamden app itself, the system firmware running on the Nano S, the computer
 that the Nano S is connected to, and posession/control of the device. For our
 purposes, the app only needs to ensure its own correctness and protect the
 user from the computer that the Nano S is connected to. Other attack surfaces
 are beyond our control; we assume that the user physically controls the
 device, is not running malicious/buggy software on the device, and follows
-proper security protocols. The goal of the Tau app is to achieve perfect
+proper security protocols. The goal of the Lamden app is to achieve perfect
 security given these assumptions.
 
 The main attack vector that we are concerned with, then, is a computer running
@@ -61,7 +61,7 @@ the interest of user-friendliness, we would like to display as little
 information as much as possible, but each omission brings with it the risk of
 introducing a vulnerability. Therefore, an app should display all data by
 default, and omit data only after subjecting the omission to extreme scrutiny.
-The Tau app adheres to this principle more closely than most Ledger apps, and
+The Lamden app adheres to this principle more closely than most Ledger apps, and
 as a result is not affected by certain vulnerabilities affecting those apps.
 
 ## Developer Notes
