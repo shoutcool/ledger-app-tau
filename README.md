@@ -1,20 +1,11 @@
 # ledger-app-tau (Lamden)
 
 
-This is the official Lamden wallet app for the Ledger Nano S.
+This is the Lamden wallet app for the Ledger Nano S.
 
 When installed on a Nano S, the app allows you to generate Lamden public keys,
 sign transactions (currently there is support for the `currency` contract and the `transfer` method).
-The Lamden app is the most secure method currently
-available for performing these actions.
 
-This code also serves as a walkthrough for writing your own Ledger Nano S app.
-The code is heavily commented and describes both the high-level architecture
-and low-level implementation details of Nano S app development. Begin by
-reading `src/main.c`, and the comments will tell you which files to read next.
-
-No binaries are provided at this time. To build and install the Lamden app on
-your Ledger Nano S, follow Ledger's [setup instructions](https://ledger.readthedocs.io/en/latest/userspace/getting_started.html).
 
 ## Usage
 
