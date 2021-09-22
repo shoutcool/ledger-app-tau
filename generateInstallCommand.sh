@@ -9,7 +9,7 @@ installCmd=$(printf 'python -m ledgerblue.loadApp \
     --curve ed25519 \
     --tlv \
     --targetId 0x31100004 \
-    --targetVersion="1.6.1" \
+    --targetVersion="2.0.0" \
     --delete \
     --fileName bin/app.hex \
     --appName Lamden \
